@@ -12,23 +12,25 @@ namespace FMSoftlab.WorkflowTasks
 {
     public class ExecuteSQLParams : TaskParamsBase
     {
+        public bool Scalar { get; set; }
         public bool MultiRow { get; set; }
         public string ConnectionString { get; set; }
         public int CommandTimeout { get; set; }
         public string Sql { get; set; }
         public CommandType CommandType { get; set; }
-        public IDictionary<string, object> ExecutionParams { get; set; }
+        public object ExecutionParams { get; set; }
 
 
         public ExecuteSQLParams()
         {
             ExecutionParams=new Dictionary<string, object>();
             MultiRow=true;
+            Scalar=false;
         }
 
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<IDictionary<string, object>>("QueryParameters", globalContext, (value) => ExecutionParams=value);
+            _bindings.SetValueIfBindingExists<object>("QueryParameters", globalContext, (value) => ExecutionParams=value);
         }
     }
     public class ExecuteSQL : BaseTaskWithParams<ExecuteSQLParams>
@@ -51,23 +53,27 @@ namespace FMSoftlab.WorkflowTasks
                 try
                 {
                     object res = null;
-                    IEnumerable<dynamic> dbres = null;
-                    if (TaskParams.ExecutionParams!=null && (TaskParams?.ExecutionParams.Any() ?? false))
+                    if (TaskParams.ExecutionParams is null)
+                        _log.LogDebug($"no params, {sql}");
+                    else
+                        _log.LogDebug($"params exist, {sql}");
+                    if (!TaskParams.Scalar)
                     {
+                        IEnumerable<dynamic> dbres = null;
                         dbres = await con.QueryAsync(sql, TaskParams.ExecutionParams, commandType: TaskParams.CommandType, commandTimeout: TaskParams.CommandTimeout);
+                        _log?.LogDebug($"Step:{Name}, executed query {sql}, MultiRow:{TaskParams.MultiRow},rows returned:{dbres?.Count()}");
+                        res=dbres;
+                        if (dbres!=null && !TaskParams.MultiRow)
+                        {
+                            res=dbres.SingleOrDefault();
+                        }
                     }
                     else
                     {
-                        dbres = await con.QueryAsync(sql, null, commandType: TaskParams.CommandType, commandTimeout: TaskParams.CommandTimeout);
-                    }
-                    _log?.LogDebug($"Step:{Name}, executed {sql}, MultiRow:{TaskParams.MultiRow},rows returned:{dbres?.Count()}");
-                    res=dbres;
-                    if (dbres!=null && !TaskParams.MultiRow)
-                    {
-                        res=dbres.SingleOrDefault();
+                        res = await con.ExecuteScalarAsync(sql, TaskParams.ExecutionParams, commandType: TaskParams.CommandType, commandTimeout: TaskParams.CommandTimeout);
+                        _log?.LogDebug($"Step:{Name}, executed scalar {sql}, MultiRow:{TaskParams.MultiRow}, res:{res}");
                     }
                     GlobalContext.SetTaskVariable(Name, "Result", res);
-
                 }
                 catch (Exception ex)
                 {
@@ -99,15 +105,11 @@ namespace FMSoftlab.WorkflowTasks
                 {
                     object res = null;
                     IEnumerable<TSqlResults> dbres = null;
-                    if (TaskParams.ExecutionParams!=null && (TaskParams?.ExecutionParams.Any() ?? false))
-                    {
-                        dbres = await con.QueryAsync<TSqlResults>(sql, TaskParams.ExecutionParams, commandType: TaskParams.CommandType);
-                    }
+                    if (TaskParams.ExecutionParams is null)
+                        _log.LogDebug($"no params, {sql}");
                     else
-                    {
-                        dbres = await con.QueryAsync<TSqlResults>(sql, null, commandType: TaskParams.CommandType);
-
-                    }
+                        _log.LogDebug($"params exist, {sql}");
+                    dbres = await con.QueryAsync<TSqlResults>(sql, TaskParams.ExecutionParams, commandType: TaskParams.CommandType);
                     _log?.LogDebug($"Step:{Name}, executed {sql}, MultiRow:{TaskParams.MultiRow},rows returned:{dbres?.Count()}");
                     res=dbres;
                     if (dbres!=null && !TaskParams.MultiRow)
@@ -115,7 +117,6 @@ namespace FMSoftlab.WorkflowTasks
                         res=dbres.SingleOrDefault();
                     }
                     GlobalContext.SetTaskVariable(Name, "Result", res);
-
                 }
                 catch (Exception ex)
                 {

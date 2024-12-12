@@ -27,16 +27,16 @@ namespace FMSoftlab.WorkflowTasks.Tests
                     Sql="select @id as Id"
                 });
             wf.AddTask<ExecuteSQL, ExecuteSQLParams>("ExecSql2",
-                           new ExecuteSQLParams()
-                           {
-                               CommandTimeout=10,
-                               MultiRow=false,
-                               Scalar=true,
-                               ConnectionString=@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true",
-                               CommandType=CommandType.Text,
-                               ExecutionParams=new Dictionary<string, object>() { { "Id", 9999 } },
-                               Sql="select @id as Id"
-                           });
+                new ExecuteSQLParams()
+                {
+                    CommandTimeout=10,
+                    MultiRow=false,
+                    Scalar=true,
+                    ConnectionString=@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true",
+                    CommandType=CommandType.Text,
+                    ExecutionParams=new Dictionary<string, object>() { { "Id", 9999 } },
+                    Sql="select @id as Id"
+                });
             wf.AddTask<ConsoleWrite, ConsoleWriteParams>("write1",
                 new ConsoleWriteParams(),
                 [new InputBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql", "Result", (x) =>
@@ -49,7 +49,6 @@ namespace FMSoftlab.WorkflowTasks.Tests
                 {
                     return x?.ToString()??string.Empty;
                 })]);
-
             await wf.Start();
             var res1 = wf.GetTaskVariable("write1", "Result");
             var res2 = wf.GetTaskVariable("write2", "Result");

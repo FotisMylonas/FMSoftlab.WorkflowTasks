@@ -50,8 +50,31 @@ namespace FMSoftlab.WorkflowTasks
          }
      }*/
 
+    public class TransformationPipeline
+    {
+        private readonly List<Func<object, object>> _transformations = new();
+
+        // Add transformation step
+        public TransformationPipeline Add<TInput, TOutput>(Func<TInput, TOutput> transformation)
+        {
+            _transformations.Add(input => transformation((TInput)input));
+            return this;
+        }
+
+        // Execute all transformations
+        public object Execute(object initialValue)
+        {
+            object result = initialValue;
+            foreach (var transform in _transformations)
+            {
+                result = transform(result);
+            }
+            return result;
+        }
+    }
     public class InputBinding
     {
+        protected readonly TransformationPipeline _pipeline = new TransformationPipeline();
         public string SourceTask { get; set; }
         public string SourceVariable { get; set; }
         public string TargetVariable { get; set; }
@@ -61,13 +84,23 @@ namespace FMSoftlab.WorkflowTasks
             SourceTask = sourceTask;
             SourceVariable = sourceVariable;
         }
+        public void SetValueIfBindingExists<TOutput>(string targetVariable, IGlobalContext globalContext, Action<TOutput> setValueAction)
+        {
+            object tempdata = globalContext.GetTaskVariable(SourceTask, SourceVariable);
+            if (tempdata != null)
+            {
+                object res= _pipeline.Execute(tempdata);
+                TOutput result = (TOutput)res;
+                //TOutput res = Transform(tempdata);
+                setValueAction(result);
+            }
+        }
     }
     public class InputBinding<TInput, TOutput> : InputBinding
     {
-        private readonly Func<TInput, TOutput> _transformation;
         public InputBinding(string targetVariable, string sourceTask, string sourceVariable, Func<TInput, TOutput> transformation) : base(targetVariable, sourceTask, sourceVariable)
         {
-            _transformation=transformation;
+            _pipeline.Add(transformation);
         }
     }
     public class BindingsRegistry
@@ -147,15 +180,13 @@ namespace FMSoftlab.WorkflowTasks
             }
             return res;
         }
-        public void SetValueIfBindingExists<T>(string targetVariable, IGlobalContext globalContext, Action<T> setValueAction)
+        public void SetValueIfBindingExists<TOutput>(string targetVariable, IGlobalContext globalContext, Action<TOutput> setValueAction)
         {
             InputBinding bind = FindBinding(targetVariable);
-            if (bind is null)
-                return;
-            object tempdata = globalContext.GetTaskVariable(bind.SourceTask, bind.SourceVariable);
-            if (tempdata != null)
-                if (tempdata is T res)
-                    setValueAction(res);
+            if (bind!=null)
+            {
+                bind.SetValueIfBindingExists(targetVariable, globalContext, setValueAction);
+            }
         }
     }
 

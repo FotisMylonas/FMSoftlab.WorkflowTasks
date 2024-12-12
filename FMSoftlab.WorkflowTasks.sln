@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35506.116 d17.12
+VisualStudioVersion = 17.12.35506.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FMSoftlab.WorkflowTasks", "FMSoftlab.WorkflowTasks\FMSoftlab.WorkflowTasks.csproj", "{6591094B-65CD-4D3E-8418-F97B00818AEB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FMSoftlab.WorkflowTasks.Tests", "FMSoftlab.WorkflowTasks.Tests\FMSoftlab.WorkflowTasks.Tests.csproj", "{9EDD10E7-51DD-458C-8F6C-2CE7A96F25D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{6591094B-65CD-4D3E-8418-F97B00818AEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6591094B-65CD-4D3E-8418-F97B00818AEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6591094B-65CD-4D3E-8418-F97B00818AEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9EDD10E7-51DD-458C-8F6C-2CE7A96F25D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EDD10E7-51DD-458C-8F6C-2CE7A96F25D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EDD10E7-51DD-458C-8F6C-2CE7A96F25D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EDD10E7-51DD-458C-8F6C-2CE7A96F25D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

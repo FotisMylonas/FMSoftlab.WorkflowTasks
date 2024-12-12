@@ -130,7 +130,10 @@ namespace FMSoftlab.WorkflowTasks
         {
             return GlobalContext.GetGlobalVariable(resultName);
         }
-
+        public object GetTaskVariable(string task, string variable)
+        {
+            return GlobalContext.GetTaskVariable(task, variable);
+        }
         public void SetGlobalVariable(string name, object value)
         {
             GlobalContext.SetGlobalVariable(name, value);

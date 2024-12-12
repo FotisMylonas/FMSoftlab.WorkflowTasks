@@ -23,7 +23,6 @@ namespace FMSoftlab.WorkflowTasks
 
         public ExecuteSQLParams()
         {
-            ExecutionParams=new Dictionary<string, object>();
             MultiRow=true;
             Scalar=false;
         }
@@ -61,7 +60,7 @@ namespace FMSoftlab.WorkflowTasks
                     {
                         IEnumerable<dynamic> dbres = null;
                         dbres = await con.QueryAsync(sql, TaskParams.ExecutionParams, commandType: TaskParams.CommandType, commandTimeout: TaskParams.CommandTimeout);
-                        _log?.LogDebug($"Step:{Name}, executed query {sql}, MultiRow:{TaskParams.MultiRow},rows returned:{dbres?.Count()}");
+                        _log?.LogDebug($"Step:{Name}, ExecuteSQL, executed query {sql}, MultiRow:{TaskParams.MultiRow}, rows returned:{dbres?.Count()}");
                         res=dbres;
                         if (dbres!=null && !TaskParams.MultiRow)
                         {
@@ -110,7 +109,7 @@ namespace FMSoftlab.WorkflowTasks
                     else
                         _log.LogDebug($"params exist, {sql}");
                     dbres = await con.QueryAsync<TSqlResults>(sql, TaskParams.ExecutionParams, commandType: TaskParams.CommandType);
-                    _log?.LogDebug($"Step:{Name}, executed {sql}, MultiRow:{TaskParams.MultiRow},rows returned:{dbres?.Count()}");
+                    _log?.LogDebug($"Step:{Name}, ExecuteSQLTyped, executed {sql}, MultiRow:{TaskParams.MultiRow}, rows returned:{dbres?.Count()}");
                     res=dbres;
                     if (dbres!=null && !TaskParams.MultiRow)
                     {

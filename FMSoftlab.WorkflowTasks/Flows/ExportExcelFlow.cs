@@ -5,19 +5,21 @@ using System.Data;
 
 namespace FMSoftlab.WorkflowTasks.Flows
 {
-
     public interface IExportExcelFlowParams
     {
-        public int LongRunningTimeout { get; set; }
-        public int ShortRunningTimeout { get; set; }
-        public string Name { get; set; }
-        public string ConnectionString { get; set; }
-        public string StagingSql { get; set; }
-        public string ExportSql { get; set; }
-        public string ExportFolder { get; set; }
-        public string Template { get; set; }
-        public string Filename { get; set; }
-        public string TimeStamp { get; set; }
+        int LongRunningTimeout { get; set; }
+        int ShortRunningTimeout { get; set; }
+        string Name { get; set; }
+        string ConnectionString { get; set; }
+        string StagingSql { get; set; }
+        CommandType StagingSqlCommandType { get; set; }
+        string ExportSql { get; set; }
+        CommandType ExportSqlCommandType { get; set; }
+        string ExportFolder { get; set; }
+        string Filename { get; set; }
+        string Template { get; set; }
+        string TimeStamp { get; set; }
+        string DataRoot { get; set; }
     }
 
     public class ExportExcelFlowParams : IExportExcelFlowParams
@@ -27,19 +29,40 @@ namespace FMSoftlab.WorkflowTasks.Flows
         public string Name { get; set; }
         public string ConnectionString { get; set; }
         public string StagingSql { get; set; }
+        public CommandType StagingSqlCommandType { get; set; }
         public string ExportSql { get; set; }
+        public CommandType ExportSqlCommandType { get; set; }
         public string Template { get; set; }
         public string ExportFolder { get; set; }
         public string Filename { get; set; }
         public string TimeStamp { get; set; }
+        public string DataRoot { get; set; }
+        public ExportExcelFlowParams() : this(
+            string.Empty,
+            String.Empty,
+            0,
+            0,
+            string.Empty,
+            CommandType.StoredProcedure,
+            string.Empty,
+            CommandType.StoredProcedure,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty)
+        { }
         public ExportExcelFlowParams(
             string name,
             string connectionString,
             int longRunningTimeout,
             int shortRunningTimeout,
             string stagingSql,
+            CommandType stagingSqlCommandType,
             string exportSql,
+            CommandType exportSqlCommandType,
             string template,
+            string dataRoot,
             string exportFolder,
             string filename,
             string timeStamp)
@@ -49,11 +72,14 @@ namespace FMSoftlab.WorkflowTasks.Flows
             LongRunningTimeout = longRunningTimeout;
             ShortRunningTimeout = shortRunningTimeout;
             StagingSql = stagingSql;
+            StagingSqlCommandType=stagingSqlCommandType;
             ExportSql = exportSql;
-            ExportFolder=exportFolder;
+            ExportSqlCommandType=exportSqlCommandType;
+            ExportFolder =exportFolder;
             Filename=filename;
             TimeStamp=timeStamp;
             Template=template;
+            DataRoot=dataRoot;
         }
     }
 
@@ -68,48 +94,66 @@ namespace FMSoftlab.WorkflowTasks.Flows
             _log = log;
             _logfact = logfact;
         }
+
+        private void AddDataStaging(Workflow wf)
+        {
+            ExecuteSQLParams p1 = new ExecuteSQLParams()
+            {
+                CommandTimeout = _exportExcelFlowParams.LongRunningTimeout,
+                CommandType = _exportExcelFlowParams.StagingSqlCommandType,
+                ConnectionString = _exportExcelFlowParams.ConnectionString,
+                Sql = _exportExcelFlowParams.StagingSql
+            };
+            wf.AddTask<ExecuteSQL, ExecuteSQLParams>("StageReport", p1);
+        }
+
+        private void AddDataExport(Workflow wf, int commandTimeout)
+        {
+            ExecuteSQLParams p2 = new ExecuteSQLParams()
+            {
+                CommandTimeout = commandTimeout,
+                CommandType = _exportExcelFlowParams.ExportSqlCommandType,
+                ConnectionString = _exportExcelFlowParams.ConnectionString,
+                Sql = _exportExcelFlowParams.ExportSql
+            };
+            wf.AddTask<ExecuteSQLTyped<T>, ExecuteSQLParams>("ExportData", p2);
+        }
+
+        private void AddExcelRendering(Workflow wf)
+        {
+            ReadFileAsBytesParams p3 = new ReadFileAsBytesParams()
+            {
+                Filename = Path.GetFullPath(_exportExcelFlowParams.Template)
+            };
+            wf.AddTask<ReadFileAsBytes, ReadFileAsBytesParams>("ReadTemplate", p3);
+            RenderExcelTemplateParams p4 = new RenderExcelTemplateParams() { DataRoot=_exportExcelFlowParams.DataRoot };
+            wf.AddTask<RenderExcelTemplate, RenderExcelTemplateParams>("RenderExcel", p4,
+                [new InputBinding("RenderingData", "ExportData", "Result"),
+                new InputBinding("TemplateContent", "ReadTemplate", "Result")]
+            );
+            WriteBytesToFileParams p5 = new WriteBytesToFileParams()
+            {
+                Filename = _exportExcelFlowParams.Filename,
+                Timestamp = _exportExcelFlowParams.TimeStamp,
+                Folder = _exportExcelFlowParams.ExportFolder
+            };
+            wf.AddTask<WriteBytesToFile, WriteBytesToFileParams>("writebytes", p5,
+                [new InputBinding("FileContent", "RenderExcel", "Result")]);
+        }
         public async Task Execute()
         {
             _log?.LogDebug($"JobName:{_exportExcelFlowParams.Name} in");
             try
             {
                 Workflow wf = new Workflow(_exportExcelFlowParams.Name, _logfact);
-                ExecuteSQLParams p1 = new ExecuteSQLParams()
+                int commandTimeout = _exportExcelFlowParams.LongRunningTimeout;
+                if (!string.IsNullOrWhiteSpace(_exportExcelFlowParams.StagingSql))
                 {
-                    CommandTimeout = _exportExcelFlowParams.LongRunningTimeout,
-                    CommandType = CommandType.StoredProcedure,
-                    ConnectionString = _exportExcelFlowParams.ConnectionString,
-                    Sql = _exportExcelFlowParams.StagingSql
-                };
-                wf.AddTask<ExecuteSQL, ExecuteSQLParams>("StagePrenotationsReport", p1);
-                ExecuteSQLParams p2 = new ExecuteSQLParams()
-                {
-                    CommandTimeout = _exportExcelFlowParams.ShortRunningTimeout,
-                    CommandType = CommandType.StoredProcedure,
-                    ConnectionString = _exportExcelFlowParams.ConnectionString,
-                    Sql = _exportExcelFlowParams.ExportSql
-                };
-                wf.AddTask<ExecuteSQLTyped<T>, ExecuteSQLParams>("ExportData", p2);
-
-                ReadFileAsBytesParams p3 = new ReadFileAsBytesParams()
-                {
-                    Filename = Path.GetFullPath(_exportExcelFlowParams.Template)
-                };
-                wf.AddTask<ReadFileAsBytes, ReadFileAsBytesParams>("ReadTemplate", p3);
-                RenderExcelTemplateParams p4 = new RenderExcelTemplateParams();
-                wf.AddTask<RenderExcelTemplate, RenderExcelTemplateParams>("RenderExcel", p4,
-                    [new InputBinding("RenderingData", "ExportData", "Result"),
-                    new InputBinding("TemplateContent", "ReadTemplate", "Result")]
-                );
-                WriteBytesToFileParams p5 = new WriteBytesToFileParams()
-                {
-                    Filename = Path.Combine(_exportExcelFlowParams.ExportFolder, _exportExcelFlowParams.Filename),
-                    Timestamp = _exportExcelFlowParams.TimeStamp,
-                    Folder = _exportExcelFlowParams.ExportFolder
-                };
-                wf.AddTask<WriteBytesToFile, WriteBytesToFileParams>("writebytes", p5,
-                    [new InputBinding("FileContent", "RenderExcel", "Result")]);
-
+                    AddDataStaging(wf);
+                    commandTimeout=_exportExcelFlowParams.ShortRunningTimeout;
+                }
+                AddDataExport(wf, commandTimeout);
+                AddExcelRendering(wf);
                 await wf.Start();
             }
             catch (Exception e)

@@ -1,4 +1,5 @@
-﻿using FMSoftlab.WorkflowTasks.Tasks;
+﻿using FMSoftlab.WorkflowTasks.Flows;
+using FMSoftlab.WorkflowTasks.Tasks;
 using Microsoft.Extensions.Logging;
 using System.Data;
 
@@ -56,6 +57,30 @@ namespace FMSoftlab.WorkflowTasks.Tests
             Assert.NotNull(res2);
             Assert.Equal("88888888", res1.ToString());
             Assert.Equal("9999", res2.ToString());
+        }
+
+        [Fact]
+        public async Task ExportExcel()
+        {
+            ILoggerFactory logfact = new LoggerFactory();
+            ILogger<ExportExcelFlow<SqlResultTest>> log = logfact.CreateLogger<ExportExcelFlow<SqlResultTest>>();
+            IExportExcelFlowParams @params = new ExportExcelFlowParams()
+            {
+                Name="ExelExportFlow",
+                ConnectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true",
+                LongRunningTimeout=100,
+                ShortRunningTimeout=10,
+                ExportFolder="Files",
+                Filename="result.xlsx",
+                StagingSql=string.Empty,
+                StagingSqlCommandType=CommandType.Text,
+                ExportSql= "select 1 as id union select 2 union select 3 as Id",
+                ExportSqlCommandType=CommandType.Text,
+                DataRoot="data",                
+                Template=@"Files\test.xlsx"
+            };
+            ExportExcelFlow<SqlResultTest> excport = new ExportExcelFlow<SqlResultTest>(@params, logfact, log);
+            await excport.Execute();
         }
     }
 }

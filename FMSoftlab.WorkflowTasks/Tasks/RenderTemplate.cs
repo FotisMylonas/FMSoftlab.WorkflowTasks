@@ -16,9 +16,9 @@ namespace FMSoftlab.WorkflowTasks
 
         public IDictionary<string, object> RenderingData { get; set; }
 
-        public RenderTemplateParams(IEnumerable<InputBinding> bindings) :base(bindings)
-        { 
-        
+        public RenderTemplateParams(IEnumerable<InputBinding> bindings) : base(bindings)
+        {
+
         }
         public RenderTemplateParams() : base()
         {
@@ -50,27 +50,26 @@ namespace FMSoftlab.WorkflowTasks
             {
                 return;
             }
-            string res = string.Empty;
-            if (!string.IsNullOrWhiteSpace(TaskParams.Template))
+            if (string.IsNullOrWhiteSpace(TaskParams.Template))
             {
-                var parser = new FluidParser();        
-                if (parser.TryParse(TaskParams.Template, out var template, out var error))
-                {
-                    var options = new TemplateOptions();
-                    options.MemberAccessStrategy=new UnsafeMemberAccessStrategy();
-                    foreach (var dict in TaskParams.RenderingData)
-                    {
-                        options.MemberAccessStrategy.Register(dict.Value.GetType());
-                    }
-                    options.MemberAccessStrategy.IgnoreCasing = true;
-                    TemplateContext context = new TemplateContext(TaskParams.RenderingData, options);
-                    res=template.Render(context);
-                }
-                else
-                {
-                    _log?.LogError($"Task:{Name}, error:{error}");
-                }
+                _log?.LogWarning($"Task:{Name}, Template is empty");
+                return;
             }
+            var parser = new FluidParser();
+            if (!parser.TryParse(TaskParams.Template, out var template, out var error))
+            {
+                _log?.LogError($"Task:{Name}, error:{error}");
+                return;
+            }
+            var options = new TemplateOptions();
+            options.MemberAccessStrategy=new UnsafeMemberAccessStrategy();
+            foreach (var dict in TaskParams.RenderingData)
+            {
+                options.MemberAccessStrategy.Register(dict.Value.GetType());
+            }
+            options.MemberAccessStrategy.IgnoreCasing = true;
+            TemplateContext context = new TemplateContext(TaskParams.RenderingData, options);
+            string res = template.Render(context);
             GlobalContext.SetTaskVariable(Name, "Result", res);
             await Task.CompletedTask;
         }

@@ -13,7 +13,8 @@ namespace FMSoftlab.WorkflowTasks
     {
         public byte[] TemplateContent { get; set; }
         public IEnumerable<object> RenderingData { get; set; }
-        public RenderExcelTemplateParams(IEnumerable<InputBinding> bindings):base(bindings)
+        public string DataRoot { get; set; }
+        public RenderExcelTemplateParams(IEnumerable<InputBinding> bindings) : base(bindings)
         {
 
         }
@@ -55,7 +56,9 @@ namespace FMSoftlab.WorkflowTasks
             byte[] res = new byte[0] { };
             _log?.LogDebug($"Will render {TaskParams?.RenderingData?.Count()} rows...");
             IDictionary<string, object> rdata = new Dictionary<string, object>();
-            rdata.Add("reportdata", TaskParams.RenderingData);
+            if (string.IsNullOrWhiteSpace(TaskParams.DataRoot))
+                TaskParams.DataRoot ="reportdata";
+            rdata.Add(TaskParams.DataRoot, TaskParams.RenderingData);
             try
             {
                 using (MemoryStream ms = new MemoryStream())

@@ -36,5 +36,9 @@ namespace FMSoftlab.WorkflowTasks
             Tasks.Add(executionTask);
             return executionTask;
         }
+        public ExecuteSQL AddTask(string name, ExecuteSQLParams taskParams, IEnumerable<InputBinding> bindings)
+        {
+            return AddTask<ExecuteSQL, ExecuteSQLParams>(name, taskParams, bindings);
+    }
     }
 }

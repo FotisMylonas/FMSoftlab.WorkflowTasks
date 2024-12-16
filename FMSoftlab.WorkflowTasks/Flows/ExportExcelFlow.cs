@@ -13,8 +13,10 @@ namespace FMSoftlab.WorkflowTasks.Flows
         string ConnectionString { get; set; }
         string StagingSql { get; set; }
         CommandType StagingSqlCommandType { get; set; }
+        object StagingParams { get; set; }
         string ExportSql { get; set; }
         CommandType ExportSqlCommandType { get; set; }
+        object ExportSqlParams { get; set; }
         string ExportFolder { get; set; }
         string Filename { get; set; }
         string Template { get; set; }
@@ -30,8 +32,10 @@ namespace FMSoftlab.WorkflowTasks.Flows
         public string ConnectionString { get; set; }
         public string StagingSql { get; set; }
         public CommandType StagingSqlCommandType { get; set; }
+        public object StagingParams { get; set; }
         public string ExportSql { get; set; }
         public CommandType ExportSqlCommandType { get; set; }
+        public object ExportSqlParams { get; set; }
         public string Template { get; set; }
         public string ExportFolder { get; set; }
         public string Filename { get; set; }
@@ -44,8 +48,10 @@ namespace FMSoftlab.WorkflowTasks.Flows
             0,
             string.Empty,
             CommandType.StoredProcedure,
+            null,
             string.Empty,
             CommandType.StoredProcedure,
+            null,
             string.Empty,
             string.Empty,
             string.Empty,
@@ -59,8 +65,10 @@ namespace FMSoftlab.WorkflowTasks.Flows
             int shortRunningTimeout,
             string stagingSql,
             CommandType stagingSqlCommandType,
+            object stagingParams,
             string exportSql,
             CommandType exportSqlCommandType,
+            object exportSqlParams,
             string template,
             string dataRoot,
             string exportFolder,
@@ -73,8 +81,10 @@ namespace FMSoftlab.WorkflowTasks.Flows
             ShortRunningTimeout = shortRunningTimeout;
             StagingSql = stagingSql;
             StagingSqlCommandType=stagingSqlCommandType;
+            StagingParams=stagingParams;
             ExportSql = exportSql;
             ExportSqlCommandType=exportSqlCommandType;
+            ExportSqlParams=exportSqlParams;
             ExportFolder =exportFolder;
             Filename=filename;
             TimeStamp=timeStamp;

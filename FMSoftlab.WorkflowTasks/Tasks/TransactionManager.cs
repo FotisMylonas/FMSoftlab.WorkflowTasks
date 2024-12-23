@@ -58,19 +58,18 @@ namespace FMSoftlab.WorkflowTasks.Tasks
     public class CompleteTransactionParams : TaskParamsBase
     {
         public ISingleTransactionManager TransactionManager { get; set; }
-        public CompleteTransactionParams()
+        public CompleteTransactionParams(string transactionManagerTask)
         {
-
+            _bindings.Bind("TransactionManager", transactionManagerTask, "Result");
+        }
+        public CompleteTransactionParams(string transactionManagerTask, IEnumerable<InputBinding> bindings) : base(bindings)
+        {
+            _bindings.Bind("TransactionManager", transactionManagerTask, "Result");
         }
 
-        public CompleteTransactionParams(IEnumerable<InputBinding> bindings) : base(bindings)
+        public CompleteTransactionParams(string transactionManagerTask, InputBinding binding) : base(binding)
         {
-
-        }
-
-        public CompleteTransactionParams(InputBinding binding) : base(binding)
-        {
-
+            _bindings.Bind("TransactionManager", transactionManagerTask, "Result");
         }
 
         public override void LoadResults(IGlobalContext globalContext)

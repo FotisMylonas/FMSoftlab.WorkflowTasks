@@ -116,7 +116,7 @@ namespace FMSoftlab.WorkflowTasks
                 _log?.LogDebug($"{Name} TaskParams is null, exiting");
                 return;
             }
-            object res = null;
+            IDataReader res = null;
             string sql = TaskParams.Sql;
             if (TaskParams.ExecutionParams is null)
                 _log?.LogDebug($"no params, {sql}");
@@ -133,8 +133,8 @@ namespace FMSoftlab.WorkflowTasks
                 }
                 else
                     sqlExecution = new SqlExecution(executionContext, sql, TaskParams.ExecutionParams, TaskParams.CommandType, _log);
-                res = await sqlExecution.ExecuteScalar();
-                _log?.LogDebug($"Step:{Name}, executed scalar {sql}, MultiRow:{TaskParams.MultiRow}, res:{res}");
+                res = await sqlExecution.ExecuteReader();
+                _log?.LogDebug($"Step:{Name}, executed reader {sql}, MultiRow:{TaskParams.MultiRow}, RecordsAffected:{res.RecordsAffected}");
                 SetTaskResult(res);
             }
             catch (Exception ex)

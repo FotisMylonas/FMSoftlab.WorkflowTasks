@@ -1,4 +1,5 @@
-﻿using FMSoftlab.WorkflowTasks.Flows;
+﻿using Dapper;
+using FMSoftlab.WorkflowTasks.Flows;
 using FMSoftlab.WorkflowTasks.Tasks;
 using Microsoft.Extensions.Logging;
 using System.Data;
@@ -99,20 +100,19 @@ namespace FMSoftlab.WorkflowTasks.Tests
                     CommandTimeout=10,
                     MultiRow=true,
                     CommandType=CommandType.Text,
-                    ExecutionParams=new Dictionary<string, object>() { { "Id", 88888888 } },
+                    ExecutionParams=new DynamicParameters(new { Id = 88888888 }),
                     Sql="select @id as Id"
                 }, [new InputBinding("TransactionManager", "TransactionManager", "Result")]);
             wf.AddTask<RenderExcelTemplate, RenderExcelTemplateParams>("render",
                 new RenderExcelTemplateParams()
                 {
+                    DataRoot="data",
                     TemplateContent=System.IO.File.ReadAllBytes(@"Files\test.xlsx"),
                 },
                 [new InputBinding("Datareader", "ExecSql", "Result")]);
-            wf.AddTask<TransactionCommit, CompleteTransactionParams>("TransactionManager", new CompleteTransactionParams()
-            {
-
-            }, [new InputBinding("TransactionManager", "TransactionManager", "Result")]);
-            await wf.Execute();
+            wf.AddTask<WriteBytesToFile, WriteBytesToFileParams>("WriteFileToDisk", new WriteBytesToFileParams() { Filename="DataReaderExcel.xlsx", Folder=@"c:\temp", Timestamp="yyyyMMdd HHmmss" }, [new InputBinding("FileContent", "render", "Result")]);
+            wf.AddTask<TransactionCommit, CompleteTransactionParams>("TransactionCommit", new CompleteTransactionParams("TransactionManager"));
+            await wf.Start();
         }
     }
 }

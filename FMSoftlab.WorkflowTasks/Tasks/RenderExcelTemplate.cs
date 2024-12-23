@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FMSoftlab.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Client;
 using MiniExcelLibs;
 using System;
@@ -44,6 +45,24 @@ namespace FMSoftlab.WorkflowTasks
 
         }
 
+        private void DisposeReader()
+        {
+            if (TaskParams.DataReader is null)
+                return;
+            try
+            {
+                TaskParams.DataReader.Close();
+            }
+            catch (Exception ex)
+            {
+                _log?.LogAllErrors(ex);
+            }
+            finally
+            {
+                TaskParams.DataReader.Dispose();
+                TaskParams.DataReader = null;
+            }
+        }
         public override async Task Execute()
         {
             if (TaskParams is null)
@@ -61,25 +80,32 @@ namespace FMSoftlab.WorkflowTasks
                 _log?.LogWarning($"RenderExcelTemplate, template does not exist, exiting");
                 return;
             }
-            _log?.LogDebug($"RenderExcelTemplate, template length:{TaskParams?.TemplateContent?.Length}, row count:{TaskParams?.RenderingData.Count()}");
+            _log?.LogDebug($"RenderExcelTemplate, template length:{TaskParams?.TemplateContent?.Length}");
             byte[] res = new byte[0] { };
             try
             {
                 using (MemoryStream ms = new MemoryStream())
                 {
+                    IDictionary<string, object> rdata = new Dictionary<string, object>();
                     if (TaskParams.DataReader!=null)
                     {
+                        rdata.Add(TaskParams.DataRoot, TaskParams.DataReader);
                         _log?.LogDebug($"Will render excel using datareader...");
-                        await MiniExcel.SaveAsByTemplateAsync(ms, TaskParams.TemplateContent, TaskParams.DataReader);
                     }
                     else
                     {
-                        _log?.LogDebug($"Will render {TaskParams?.RenderingData?.Count()} rows...");
-                        IDictionary<string, object> rdata = new Dictionary<string, object>();
                         if (string.IsNullOrWhiteSpace(TaskParams.DataRoot))
                             TaskParams.DataRoot ="reportdata";
                         rdata.Add(TaskParams.DataRoot, TaskParams.RenderingData);
+                        _log?.LogDebug($"Will render {TaskParams?.RenderingData?.Count()} rows...");
+                    }
+                    try
+                    {
                         await MiniExcel.SaveAsByTemplateAsync(ms, TaskParams.TemplateContent, rdata);
+                    }
+                    finally
+                    {
+                        DisposeReader();
                     }
                     res = ms.ToArray();
                 }

@@ -135,7 +135,7 @@ namespace FMSoftlab.WorkflowTasks
         public InputBinding Bind(string targetVariable, string sourceTask, string sourceVariable)
         {
             InputBinding binding = FindBinding(targetVariable);
-            if (binding!=null)
+            if (binding is null)
             {
                 binding=new InputBinding(targetVariable, sourceTask, sourceVariable);
                 _bindings.Add(binding);

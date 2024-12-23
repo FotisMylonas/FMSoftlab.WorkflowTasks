@@ -34,7 +34,7 @@ namespace FMSoftlab.WorkflowTasks.Tasks
             {
                 fileBytes = await File.ReadAllBytesAsync(TaskParams.Filename);
             }
-            GlobalContext.SetTaskVariable(Name, "Result", fileBytes);
+            SetTaskResult(fileBytes);
         }
     }
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FMSoftlab.WorkflowTasks.Tasks
 {
-    public class QueryParamsParams : TaskParamsBase
+    /*public class QueryParamsParams : TaskParamsBase
     {
         public QueryParamsParams() : base()
         {
@@ -37,5 +37,5 @@ namespace FMSoftlab.WorkflowTasks.Tasks
             GlobalContext.SetTaskVariable(Name, "QueryParameters", parameters);
             return Task.CompletedTask;
         }
-    }
+    }*/
 }

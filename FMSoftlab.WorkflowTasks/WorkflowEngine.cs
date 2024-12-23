@@ -5,6 +5,10 @@
         Task Execute(BaseTask workflowTask);
     }
 
+    public static class WorkflowEngineExtensions
+    {
+
+    }
     public class WorkflowEngine : IWorkflowEngine
     {
         public async Task Execute(BaseTask workflowTask)
@@ -16,23 +20,23 @@
             }
         }
     }
-   /* public interface IWorkflow
-    {
-        IDictionary<string, object> TaskResults { get; }
-        List<BaseTask> Tasks { get; }
-    }
-    public class SequentialWokflow : IWorkflow
-    {
-        public IDictionary<string, object> TaskResults { get; }
-        public List<BaseTask> Tasks { get; }
-        public SequentialWokflow()
-        {
-            TaskResults=new Dictionary<string, object>();
-            Tasks=new List<BaseTask>();
-        }
-    }*/
+    /* public interface IWorkflow
+     {
+         IDictionary<string, object> TaskResults { get; }
+         List<BaseTask> Tasks { get; }
+     }
+     public class SequentialWokflow : IWorkflow
+     {
+         public IDictionary<string, object> TaskResults { get; }
+         public List<BaseTask> Tasks { get; }
+         public SequentialWokflow()
+         {
+             TaskResults=new Dictionary<string, object>();
+             Tasks=new List<BaseTask>();
+         }
+     }*/
 
-    
+
 
 
 

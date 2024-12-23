@@ -40,6 +40,7 @@ namespace FMSoftlab.WorkflowTasks
 
         public RenderTemplate(string name, IGlobalContext globalContext, BaseTask parent, RenderTemplateParams taskParams, ILogger<RenderTemplate> log) : base(name, globalContext, parent, taskParams, log)
         {
+
         }
 
         public override async Task Execute()
@@ -70,7 +71,7 @@ namespace FMSoftlab.WorkflowTasks
             options.MemberAccessStrategy.IgnoreCasing = true;
             TemplateContext context = new TemplateContext(TaskParams.RenderingData, options);
             string res = template.Render(context);
-            GlobalContext.SetTaskVariable(Name, "Result", res);
+            SetTaskResult(res);
             await Task.CompletedTask;
         }
     }

@@ -186,7 +186,7 @@ namespace FMSoftlab.WorkflowTasks
                 // Add the row to the CSV file
                 csvBuilder.AppendLine(string.Join(TaskParams.Delimiter, escapedValues));
             }
-            GlobalContext.SetTaskVariable(Name, "Result", csvBuilder.ToString());
+            SetTaskResult(csvBuilder.ToString());
             await Task.CompletedTask;
             //string filename = Path.Combine(settings.Folder, settings.Filename);
             // await File.WriteAllTextAsync(filename, csvBuilder.ToString());

@@ -24,8 +24,10 @@ namespace FMSoftlab.WorkflowTasks
         ILoggerFactory LoggerFactory { get; }
         List<StepResult> Results { get; }
         object GetTaskVariable(string stepName, string resultName);
-        void SetTaskVariable(string stepName, string resultName, object Value);
+        object GetTaskResult(string stepName);
         object GetGlobalVariable(string resultName);
+        void SetTaskVariable(string stepName, string resultName, object Value);
+        void SetTaskResult(string stepName, object value);
         void SetGlobalVariable(string resultName, object value);
     }
     public class GlobalContext : IGlobalContext
@@ -38,14 +40,17 @@ namespace FMSoftlab.WorkflowTasks
             LoggerFactory=loggerFactory;
             Results = new List<StepResult>();
         }
-
-        public object GetTaskVariable(string stepName, string resultName)
+        public object GetTaskResult(string stepName)
+        {
+            return GetTaskVariable(stepName, "Result");
+        }
+        public object GetTaskVariable(string stepName, string variableName)
         {
             object res = null;
             var item = Results.FirstOrDefault(
                 x =>
                 string.Equals(x.StepName, stepName, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(x.ResultName, resultName, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.ResultName, variableName, StringComparison.OrdinalIgnoreCase)
             );
             if (item != null)
             {
@@ -53,18 +58,20 @@ namespace FMSoftlab.WorkflowTasks
             }
             return res;
         }
-
         public object GetGlobalVariable(string resultName)
         {
             return GetTaskVariable("Global", resultName);
         }
-
-        public void SetTaskVariable(string stepName, string resultName, object value)
+        public void SetTaskResult(string stepName, object value)
+        {
+            SetTaskVariable(stepName, "Result", value);
+        }
+        public void SetTaskVariable(string stepName, string variableName, object value)
         {
             var item = Results.FirstOrDefault(
                 x =>
                 string.Equals(x.StepName, stepName, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(x.ResultName, resultName, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.ResultName, variableName, StringComparison.OrdinalIgnoreCase)
             );
             if (item!=null)
             {
@@ -72,10 +79,9 @@ namespace FMSoftlab.WorkflowTasks
             }
             else
             {
-                Results.Add(new StepResult { StepName=stepName, ResultName=resultName, ResultValue=value });
+                Results.Add(new StepResult { StepName=stepName, ResultName=variableName, ResultValue=value });
             }
         }
-
         public void SetGlobalVariable(string resultName, object value)
         {
             SetTaskVariable("Global", resultName, value);
@@ -138,7 +144,10 @@ namespace FMSoftlab.WorkflowTasks
         {
             GlobalContext.SetGlobalVariable(name, value);
         }
-
+        public void SetTaskResult(object value)
+        {
+            GlobalContext.SetTaskResult(Name, value);
+        }
         private string GetPublicProperties(object obj)
         {
             string res = string.Empty;
@@ -198,6 +207,8 @@ namespace FMSoftlab.WorkflowTasks
             _log?.LogDebug($"Completed step: {Name}");
         }
         public abstract Task Execute();
+
+
     }
 
     public abstract class BaseTaskWithParams<TTaskParams> : BaseTask where TTaskParams : TaskParamsBase
@@ -205,16 +216,16 @@ namespace FMSoftlab.WorkflowTasks
 
         public TTaskParams TaskParams { get; set; }
 
-        public BaseTaskWithParams(string name, IGlobalContext globalContext, BaseTask parent, TTaskParams settings, ILogger log) : base(name, globalContext, parent, log)
+        public BaseTaskWithParams(string name, IGlobalContext globalContext, BaseTask parent, TTaskParams taskParams, ILogger log) : base(name, globalContext, parent, log)
         {
-            TaskParams=settings;
-            _taskParams=settings;
+            TaskParams=taskParams;
+            _taskParams=taskParams;
         }
 
-        public BaseTaskWithParams(string name, IGlobalContext globalContext, TTaskParams settings, ILogger log) : base(name, globalContext, log)
+        public BaseTaskWithParams(string name, IGlobalContext globalContext, TTaskParams taskParams, ILogger log) : base(name, globalContext, log)
         {
-            TaskParams=settings;
-            _taskParams=settings;
+            TaskParams=taskParams;
+            _taskParams=taskParams;
         }
 
         public void SetParams(TTaskParams taskParams)
@@ -222,5 +233,6 @@ namespace FMSoftlab.WorkflowTasks
             TaskParams=taskParams;
             _taskParams=taskParams;
         }
+
     }
 }

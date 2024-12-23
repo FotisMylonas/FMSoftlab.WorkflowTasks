@@ -72,15 +72,47 @@ namespace FMSoftlab.WorkflowTasks.Tests
                 ShortRunningTimeout=10,
                 ExportFolder="Files",
                 Filename="result.xlsx",
-                StagingSql=string.Empty,
                 StagingSqlCommandType=CommandType.Text,
                 ExportSql= "select 1 as id union select 2 union select 3 as Id",
                 ExportSqlCommandType=CommandType.Text,
-                DataRoot="data",                
+                DataRoot="data",
                 Template=@"Files\test.xlsx"
             };
             ExportExcelFlow<SqlResultTest> excport = new ExportExcelFlow<SqlResultTest>(@params, logfact, log);
             await excport.Execute();
+        }
+
+        [Fact]
+        public async Task ExportExcelDatareader()
+        {
+            ILoggerFactory logfact = new LoggerFactory();
+            ILogger<ExportExcelFlow<SqlResultTest>> log = logfact.CreateLogger<ExportExcelFlow<SqlResultTest>>();
+
+            Workflow wf = new Workflow("test", logfact);
+            wf.AddTask<TransactionManager, TransactionManagerParams>("TransactionManager", new TransactionManagerParams()
+            {
+                ConnectionString=@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true"
+            });
+            wf.AddTask<ExecuteSQLReader, ExecuteSQLParams>("ExecSql",
+                new ExecuteSQLParams()
+                {
+                    CommandTimeout=10,
+                    MultiRow=true,
+                    CommandType=CommandType.Text,
+                    ExecutionParams=new Dictionary<string, object>() { { "Id", 88888888 } },
+                    Sql="select @id as Id"
+                }, [new InputBinding("TransactionManager", "TransactionManager", "Result")]);
+            wf.AddTask<RenderExcelTemplate, RenderExcelTemplateParams>("render",
+                new RenderExcelTemplateParams()
+                {
+                    TemplateContent=System.IO.File.ReadAllBytes(@"Files\test.xlsx"),
+                },
+                [new InputBinding("Datareader", "ExecSql", "Result")]);
+            wf.AddTask<TransactionCommit, CompleteTransactionParams>("TransactionManager", new CompleteTransactionParams()
+            {
+
+            }, [new InputBinding("TransactionManager", "TransactionManager", "Result")]);
+            await wf.Execute();
         }
     }
 }

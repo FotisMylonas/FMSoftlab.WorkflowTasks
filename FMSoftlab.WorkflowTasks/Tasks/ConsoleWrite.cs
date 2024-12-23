@@ -34,7 +34,7 @@ namespace FMSoftlab.WorkflowTasks.Tasks
         public override async Task Execute()
         {
             Console.WriteLine(TaskParams.Message);
-            GlobalContext.SetTaskVariable(Name, "Result", TaskParams.Message);
+            SetTaskResult(TaskParams.Message);
             await Task.CompletedTask;
         }
     }

@@ -20,8 +20,8 @@ namespace FMSoftlab.WorkflowTasks
         }
         public async Task Start()
         {
-            WorkflowEngine eng = new WorkflowEngine();
-            await eng.Execute(this);
+            WorkflowEngine engine = new WorkflowEngine();
+            await engine.Execute(this);
         }
         public TExecutionTask AddTask<TExecutionTask, TTaskParams>(string name, TTaskParams taskParams) where TExecutionTask : BaseTask where TTaskParams : TaskParamsBase
         {
@@ -39,6 +39,6 @@ namespace FMSoftlab.WorkflowTasks
         public ExecuteSQL AddTask(string name, ExecuteSQLParams taskParams, IEnumerable<InputBinding> bindings)
         {
             return AddTask<ExecuteSQL, ExecuteSQLParams>(name, taskParams, bindings);
-    }
+        }
     }
 }

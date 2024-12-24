@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using FMSoftlab.DataAccess;
+using FMSoftlab.Logging;
 using FMSoftlab.WorkflowTasks.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
@@ -139,7 +140,7 @@ namespace FMSoftlab.WorkflowTasks
             }
             catch (Exception ex)
             {
-                _log?.LogError($"{ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                _log?.LogAllErrors(ex);
                 throw;
             }
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -89,7 +90,7 @@ namespace FMSoftlab.WorkflowTasks
             object tempdata = globalContext.GetTaskVariable(SourceTask, SourceVariable);
             if (tempdata != null)
             {
-                object res= _pipeline.Execute(tempdata);
+                object res = _pipeline.Execute(tempdata);
                 TOutput result = (TOutput)res;
                 //TOutput res = Transform(tempdata);
                 setValueAction(result);
@@ -105,10 +106,12 @@ namespace FMSoftlab.WorkflowTasks
     }
     public class BindingsRegistry
     {
+        private readonly ILogger _log;
         private readonly List<InputBinding> _bindings;
-        public BindingsRegistry()
+        public BindingsRegistry(ILogger log)
         {
             _bindings = new List<InputBinding>();
+            _log=log;
         }
         public void Load(IEnumerable<InputBinding> bindings)
         {
@@ -193,19 +196,23 @@ namespace FMSoftlab.WorkflowTasks
     public abstract class TaskParamsBase
     {
         protected readonly BindingsRegistry _bindings;
+        protected readonly ILogger _log;
         public TaskParamsBase()
         {
-            _bindings=new BindingsRegistry();
+            _log=null;
+            _bindings=new BindingsRegistry(_log);
         }
         public TaskParamsBase(IEnumerable<InputBinding> bindings)
         {
-            _bindings=new BindingsRegistry();
+            _log=null;
+            _bindings=new BindingsRegistry(_log);
             if (bindings?.Any()??false)
                 _bindings.Load(bindings);
         }
         public TaskParamsBase(InputBinding binding)
         {
-            _bindings=new BindingsRegistry();
+            _log=null;
+            _bindings=new BindingsRegistry(_log);
             if (binding!=null)
                 _bindings.Load(binding);
         }

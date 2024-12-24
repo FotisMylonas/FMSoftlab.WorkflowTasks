@@ -14,6 +14,48 @@ namespace FMSoftlab.WorkflowTasks.Tests
     public class WorkflowTests
     {
         [Fact]
+        public async Task UseSqlScalarResultFromStepOneAsInputToStepTwo()
+        {
+            int value = 88888888;
+            ILoggerFactory logfact = new LoggerFactory();
+            Workflow wf = new Workflow("test", logfact);
+            wf.AddTask<ExecuteSQL, ExecuteSQLParams>("ExecSql1",
+                new ExecuteSQLParams()
+                {
+                    CommandTimeout=10,
+                    MultiRow=false,
+                    Scalar=true,
+                    ConnectionString=@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true",
+                    CommandType=CommandType.Text,
+                    ExecutionParams=new Dictionary<string, object>() { { "Id", value } },
+                    Sql="select @id as Id"
+                });
+            wf.AddTask<ExecuteSQLTyped<SqlResultTest>, ExecuteSQLParams>("ExecSql2",
+                new ExecuteSQLParams()
+                {
+                    CommandTimeout=10,
+                    ConnectionString=@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true",
+                    CommandType=CommandType.Text,
+                    Sql="select @id as Id"
+                }, [new InputBinding<int, object>("ExecutionParams", "ExecSql1", "Result", (x) =>
+                {
+                    return new { Id = x };
+                })]);
+            wf.AddTask<ConsoleWrite, ConsoleWriteParams>("write1",
+                new ConsoleWriteParams(),
+                [new InputBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql2", "Result", (x) =>
+                {
+                    return x.First().Id.ToString();
+                })]);
+            await wf.Start();
+            var res1 = wf.GetTaskVariable("ExecSql1", "Result");
+            var res2 = wf.GetTaskVariable("write1", "Result");
+            Assert.NotNull(res1);
+            Assert.NotNull(res2);
+            Assert.Equal(value.ToString(), res1.ToString());
+        }
+
+        [Fact]
         public async Task Test1()
         {
             ILoggerFactory logfact = new LoggerFactory();

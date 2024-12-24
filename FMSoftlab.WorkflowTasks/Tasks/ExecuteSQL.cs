@@ -32,7 +32,7 @@ namespace FMSoftlab.WorkflowTasks
         }
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<object>("QueryParameters", globalContext, (value) => ExecutionParams=value);
+            _bindings.SetValueIfBindingExists<object>("ExecutionParams", globalContext, (value) => ExecutionParams=value);
             _bindings.SetValueIfBindingExists<ISingleTransactionManager>("TransactionManager", globalContext, (value) => TransactionManager=value);
         }
     }
@@ -85,7 +85,7 @@ namespace FMSoftlab.WorkflowTasks
                 else
                 {
                     res = await sqlExecution.ExecuteScalar();
-                    _log?.LogDebug($"Step:{Name}, executed scalar {sql}, MultiRow:{TaskParams.MultiRow}, res:{res}");
+                    _log?.LogDebug($"Step:{Name}, executed scalar {sql}, res:{res}");
                 }
                 SetTaskResult(res);
             }

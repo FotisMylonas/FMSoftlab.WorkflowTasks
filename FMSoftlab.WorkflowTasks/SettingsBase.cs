@@ -97,6 +97,13 @@ namespace FMSoftlab.WorkflowTasks
             }
         }
     }
+    public class ResultBinding: InputBinding
+    {
+        public ResultBinding(string targetVariable, string sourceTask) : base(targetVariable, sourceTask, "Result")
+        {
+
+        }
+    }
     public class InputBinding<TInput, TOutput> : InputBinding
     {
         public InputBinding(string targetVariable, string sourceTask, string sourceVariable, Func<TInput, TOutput> transformation) : base(targetVariable, sourceTask, sourceVariable)
@@ -104,6 +111,14 @@ namespace FMSoftlab.WorkflowTasks
             _pipeline.Add(transformation);
         }
     }
+    public class ResultBinding<TInput, TOutput> : ResultBinding
+    {
+        public ResultBinding(string targetVariable, string sourceTask, Func<TInput, TOutput> transformation) : base(targetVariable, sourceTask)
+        {
+            _pipeline.Add(transformation);
+        }
+    }
+
     public class BindingsRegistry
     {
         private readonly ILogger _log;

@@ -17,8 +17,31 @@ namespace FMSoftlab.WorkflowTasks
 {
     public class ExecuteSQLParams : TaskParamsBase
     {
-        public bool Scalar { get; set; }
-        public bool MultiRow { get; set; }
+        private bool _scalar;
+        private bool _multiRow;
+        public bool Scalar
+        {
+            get { return _scalar; }
+            set
+            {
+                _scalar=value;
+                if (_scalar)
+                    MultiRow=false;
+            }
+        }
+        public bool MultiRow
+        {
+            get
+            {
+                return _multiRow;
+            }
+            set
+            {
+                _multiRow=value;
+                if (_multiRow)
+                    Scalar=false;
+            }
+        }
         public ISingleTransactionManager TransactionManager { get; set; }
         public string ConnectionString { get; set; }
         public int CommandTimeout { get; set; }

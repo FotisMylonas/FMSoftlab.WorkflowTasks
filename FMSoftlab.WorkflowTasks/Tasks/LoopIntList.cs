@@ -10,28 +10,34 @@ using static Dapper.SqlMapper;
 namespace FMSoftlab.WorkflowTasks
 {
 
-    /*public class LoopListParams<T> : TaskParamsBase
+    public class LoopListParams<T> : TaskParamsBase
     {
         public List<T> Items { get; set; }
 
-        public Workflow Flow;
-        public LoopListParams(IGlobalContext globalContext) : base(globalContext)
+        public LoopListParams()
         {
             Items= new List<T>();
-            CreateBinding("Items");
         }
 
-        public override void LoadResults()
+        public LoopListParams(IEnumerable<InputBinding> bindings) : base(bindings)
         {
-            InputBinding binding = GetRequiredBinding("Items");
-            object results = GlobalContext.GetTaskVariable(binding.TaskName, binding.VariableName);
-            if (results !=null && results is IEnumerable<T> rl)
+            Items= new List<T>();
+        }
+
+        public LoopListParams(InputBinding binding) : base(binding)
+        {
+            Items= new List<T>();
+        }
+
+        public override void LoadResults(IGlobalContext globalContext)
+        {
+            _bindings.SetValueIfBindingExists<IEnumerable<T>>("Items", globalContext, (value) =>
             {
-                if (rl?.Any() ?? false)
+                if (value?.Any() ?? false)
                 {
-                    Items.AddRange(rl);
+                    Items.AddRange(value);
                 }
-            }
+            });
         }
     }
 
@@ -50,9 +56,7 @@ namespace FMSoftlab.WorkflowTasks
 
         public async override Task Execute()
         {
-            if (TaskParams.Flow == null)
-                return;
-            if (TaskParams?.Items==null || TaskParams?.Items?.Count == 0)
+            if (!(TaskParams?.Items.Any()??false))
             {
                 return;
             }
@@ -61,8 +65,8 @@ namespace FMSoftlab.WorkflowTasks
                 try
                 {
                     //await TaskParams.Flow
-                    await TaskParams.Flow.Start();
-                    _log?.LogDebug($"loop int list, id:{id}");
+                    //await TaskParams.Flow.Start();
+                    _log?.LogDebug($"loop list, id:{id}");
                 }
                 catch (Exception ex)
                 {
@@ -96,5 +100,5 @@ namespace FMSoftlab.WorkflowTasks
                 _log?.LogError($"Error: {e.Message}{Environment.NewLine}{e.StackTrace}");
             }
         }
-    }*/
+    }
 }

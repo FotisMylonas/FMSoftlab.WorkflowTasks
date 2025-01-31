@@ -7,11 +7,11 @@
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.44" />
-    <PackageReference Include="Fluid.Core" Version="2.18.0" />
+    <PackageReference Include="Fluid.Core" Version="2.19.0" />
     <PackageReference Include="FMSoftlab.DataAccess" Version="1.1.5" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-    <PackageReference Include="miniexcel" Version="1.36.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.1" />
+    <PackageReference Include="miniexcel" Version="1.37.0" />
   </ItemGroup>
 
 </Project>

@@ -23,22 +23,5 @@ namespace FMSoftlab.WorkflowTasks
             WorkflowEngine engine = new WorkflowEngine();
             await engine.Execute(this);
         }
-        public TExecutionTask AddTask<TExecutionTask, TTaskParams>(string name, TTaskParams taskParams) where TExecutionTask : BaseTask where TTaskParams : TaskParamsBase
-        {
-            TExecutionTask executionTask = (TExecutionTask)Activator.CreateInstance(typeof(TExecutionTask), name, GlobalContext, this, taskParams, _logFactory.CreateLogger<TExecutionTask>());
-            Tasks.Add(executionTask);
-            return executionTask;
-        }
-        public TExecutionTask AddTask<TExecutionTask, TTaskParams>(string name, TTaskParams taskParams, IEnumerable<InputBinding> bindings) where TExecutionTask : BaseTask where TTaskParams : TaskParamsBase
-        {
-            taskParams.LoadBindings(bindings);
-            TExecutionTask executionTask = (TExecutionTask)Activator.CreateInstance(typeof(TExecutionTask), name, GlobalContext, this, taskParams, _logFactory.CreateLogger<TExecutionTask>());
-            Tasks.Add(executionTask);
-            return executionTask;
-        }
-        public ExecuteSQL AddTask(string name, ExecuteSQLParams taskParams, IEnumerable<InputBinding> bindings)
-        {
-            return AddTask<ExecuteSQL, ExecuteSQLParams>(name, taskParams, bindings);
-        }
     }
 }

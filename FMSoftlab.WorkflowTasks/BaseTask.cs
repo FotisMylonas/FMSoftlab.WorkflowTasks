@@ -89,6 +89,7 @@ namespace FMSoftlab.WorkflowTasks
     }
     public abstract class BaseTask
     {
+        private const int STRINGLIMIT = 10000;
         protected TaskParamsBase _taskParams;
         public string Name { get; }
         protected readonly ILogger _log;
@@ -148,7 +149,7 @@ namespace FMSoftlab.WorkflowTasks
         {
             GlobalContext.SetTaskResult(Name, value);
         }
-        private string GetPublicProperties(object obj)
+        private string GetPublicPropertiesAsString(object obj)
         {
             string res = string.Empty;
             if (obj != null)
@@ -167,12 +168,14 @@ namespace FMSoftlab.WorkflowTasks
                             {
                                 foreach (var dictItem in dict)
                                 {
-                                    sb.AppendLine($"{dictItem.Key}:{dictItem.Value}");
+                                    string svalue = dictItem.Value?.ToString()?.Substring(1, STRINGLIMIT);
+                                    sb.AppendLine($"{dictItem.Key}:{svalue}");
                                 }
                             }
                             else
                             {
-                                sb.AppendLine($"{property.Name}:{property.GetValue(obj)}");
+                                string svalue = value.ToString()?.Substring(1, STRINGLIMIT);
+                                sb.AppendLine($"{property.Name}:{svalue}");
                             }
                         }
                     }
@@ -190,7 +193,7 @@ namespace FMSoftlab.WorkflowTasks
                 if (_taskParams!=null)
                 {
                     _taskParams.LoadResults(GlobalContext);
-                    string s = GetPublicProperties(_taskParams);
+                    string s = GetPublicPropertiesAsString(_taskParams);
                     _log?.LogDebug($"executing step:{Name}, params:{Environment.NewLine}{s}");
                 }
                 else

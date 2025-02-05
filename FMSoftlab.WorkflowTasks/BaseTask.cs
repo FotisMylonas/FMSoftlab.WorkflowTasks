@@ -18,6 +18,16 @@ namespace FMSoftlab.WorkflowTasks
         public string ResultName { get; set; }
         public object ResultValue { get; set; }
     }
+    internal static class StringExtensions     
+    {
+        public static string GetFirstNChars(this string input, int n)
+        {
+            if (string.IsNullOrEmpty(input) || n <= 0)
+                return string.Empty;
+
+            return input.Length > n ? input.Substring(0, n) : input;
+        }
+    }
     public interface IGlobalContext
     {
         //public IDictionary<string, object> TaskParameters { get; }
@@ -168,13 +178,13 @@ namespace FMSoftlab.WorkflowTasks
                             {
                                 foreach (var dictItem in dict)
                                 {
-                                    string svalue = dictItem.Value?.ToString()?.Substring(1, STRINGLIMIT);
+                                    string svalue = dictItem.Value?.ToString()?.GetFirstNChars(STRINGLIMIT);
                                     sb.AppendLine($"{dictItem.Key}:{svalue}");
                                 }
                             }
                             else
                             {
-                                string svalue = value.ToString()?.Substring(1, STRINGLIMIT);
+                                string svalue = value.ToString()?.GetFirstNChars(STRINGLIMIT);
                                 sb.AppendLine($"{property.Name}:{svalue}");
                             }
                         }

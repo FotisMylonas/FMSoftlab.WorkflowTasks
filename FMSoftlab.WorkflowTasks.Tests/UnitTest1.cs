@@ -2,6 +2,8 @@
 using FMSoftlab.WorkflowTasks.Flows;
 using FMSoftlab.WorkflowTasks.Tasks;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Extensions.Logging;
 using System.Data;
 
 namespace FMSoftlab.WorkflowTasks.Tests
@@ -13,12 +15,25 @@ namespace FMSoftlab.WorkflowTasks.Tests
     }
     public class WorkflowTests
     {
+        private readonly ILogger<WorkflowTests> _logger;
+        private readonly ILoggerFactory _loggerFactory;
+        public WorkflowTests()
+        {
+            var logger = new LoggerConfiguration()
+          .MinimumLevel.Verbose()
+          .WriteTo.Console()
+          .WriteTo.File(@"c:\temp\WorkflowTests.log", rollingInterval: RollingInterval.Day)
+          .CreateLogger();
+
+            _loggerFactory = new SerilogLoggerFactory(logger);
+            _logger = _loggerFactory.CreateLogger<WorkflowTests>();
+        }
+
         [Fact]
         public async Task UseSqlScalarResultFromStepOneAsInputToStepTwo()
         {
             int value = 88888888;
-            ILoggerFactory logfact = new LoggerFactory();
-            Workflow wf = new Workflow("test", logfact);
+            Workflow wf = new Workflow("test", _loggerFactory);
             wf.AddTask<ExecuteSQL, ExecuteSQLParams>("ExecSql1",
                 new ExecuteSQLParams()
                 {
@@ -58,8 +73,7 @@ namespace FMSoftlab.WorkflowTasks.Tests
         [Fact]
         public async Task Test1()
         {
-            ILoggerFactory logfact = new LoggerFactory();
-            Workflow wf = new Workflow("test", logfact);
+            Workflow wf = new Workflow("test", _loggerFactory);
             wf.AddTask<ExecuteSQLTyped<SqlResultTest>, ExecuteSQLParams>("ExecSql",
                 new ExecuteSQLParams()
                 {
@@ -105,8 +119,7 @@ namespace FMSoftlab.WorkflowTasks.Tests
         [Fact]
         public async Task ExportExcel()
         {
-            ILoggerFactory logfact = new LoggerFactory();
-            ILogger<ExportExcelFlow<SqlResultTest>> log = logfact.CreateLogger<ExportExcelFlow<SqlResultTest>>();
+            ILogger<ExportExcelFlow<SqlResultTest>> log = _loggerFactory.CreateLogger<ExportExcelFlow<SqlResultTest>>();
             IExportExcelFlowParams @params = new ExportExcelFlowParams()
             {
                 Name="ExelExportFlow",
@@ -121,17 +134,16 @@ namespace FMSoftlab.WorkflowTasks.Tests
                 DataRoot="data",
                 Template=@"Files\test.xlsx"
             };
-            ExportExcelFlow<SqlResultTest> excport = new ExportExcelFlow<SqlResultTest>(@params, logfact, log);
+            ExportExcelFlow<SqlResultTest> excport = new ExportExcelFlow<SqlResultTest>(@params, _loggerFactory, log);
             await excport.Execute();
         }
 
         [Fact]
         public async Task ExportExcelDatareader()
         {
-            ILoggerFactory logfact = new LoggerFactory();
-            ILogger<ExportExcelFlow<SqlResultTest>> log = logfact.CreateLogger<ExportExcelFlow<SqlResultTest>>();
+            ILogger<ExportExcelFlow<SqlResultTest>> log = _loggerFactory.CreateLogger<ExportExcelFlow<SqlResultTest>>();
 
-            Workflow wf = new Workflow("test", logfact);
+            Workflow wf = new Workflow("test", _loggerFactory);
             wf.AddTask<TransactionManager, TransactionManagerParams>("TransactionManager", new TransactionManagerParams()
             {
                 ConnectionString=@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true"

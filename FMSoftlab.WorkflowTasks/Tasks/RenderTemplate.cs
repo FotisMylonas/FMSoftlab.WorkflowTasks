@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FMSoftlab.WorkflowTasks
 {
@@ -27,8 +26,8 @@ namespace FMSoftlab.WorkflowTasks
 
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<IDictionary<string, object>>("RenderingData", globalContext, (value) => RenderingData = value);
-            _bindings.SetValueIfBindingExists<string>("Template", globalContext, (value) => Template = value);
+            _bindings.SetValueIfBindingExists<IDictionary<string, object>>("RenderingData", globalContext, (globalContext, value) => RenderingData = value);
+            _bindings.SetValueIfBindingExists<string>("Template", globalContext, (globalContext, value) => Template = value);
         }
     }
     public class RenderTemplate : BaseTaskWithParams<RenderTemplateParams>

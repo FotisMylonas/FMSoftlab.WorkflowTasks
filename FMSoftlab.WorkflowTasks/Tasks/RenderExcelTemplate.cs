@@ -28,9 +28,9 @@ namespace FMSoftlab.WorkflowTasks
         }
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<IEnumerable<object>>("RenderingData", globalContext, (value) => RenderingData = value);
-            _bindings.SetValueIfBindingExists<byte[]>("TemplateContent", globalContext, (value) => TemplateContent = value);
-            _bindings.SetValueIfBindingExists<IDataReader>("DataReader", globalContext, (value) => DataReader = value);
+            _bindings.SetValueIfBindingExists<IEnumerable<object>>("RenderingData", globalContext, (globalContext, value) => RenderingData = value);
+            _bindings.SetValueIfBindingExists<byte[]>("TemplateContent", globalContext, (globalContext, value) => TemplateContent = value);
+            _bindings.SetValueIfBindingExists<IDataReader>("DataReader", globalContext, (globalContext, value) => DataReader = value);
         }
     }
     public class RenderExcelTemplate : BaseTaskWithParams<RenderExcelTemplateParams>

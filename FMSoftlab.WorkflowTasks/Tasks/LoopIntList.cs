@@ -31,7 +31,7 @@ namespace FMSoftlab.WorkflowTasks
 
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<IEnumerable<T>>("Items", globalContext, (value) =>
+            _bindings.SetValueIfBindingExists<IEnumerable<T>>("Items", globalContext, (globalContext, value) =>
             {
                 if (value?.Any() ?? false)
                 {

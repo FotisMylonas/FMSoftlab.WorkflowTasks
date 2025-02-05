@@ -52,13 +52,13 @@ namespace FMSoftlab.WorkflowTasks.Tests
                     ConnectionString=@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true",
                     CommandType=CommandType.Text,
                     Sql="select @id as Id"
-                }, [new InputBinding<int, object>("ExecutionParams", "ExecSql1", "Result", (x) =>
+                }, [new InputBinding<int, object>("ExecutionParams", "ExecSql1", "Result", (globalContext, x) =>
                 {
                     return new { Id = x };
                 })]);
             wf.AddTask<ConsoleWrite, ConsoleWriteParams>("write1",
                 new ConsoleWriteParams(),
-                [new InputBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql2", "Result", (x) =>
+                [new InputBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql2", "Result", (globalContext, x) =>
                 {
                     return x.First().Id.ToString();
                 })]);
@@ -97,13 +97,13 @@ namespace FMSoftlab.WorkflowTasks.Tests
                 });
             wf.AddTask<ConsoleWrite, ConsoleWriteParams>("write1",
                 new ConsoleWriteParams(),
-                [new InputBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql", "Result", (x) =>
+                [new InputBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql", "Result", (globalContext, x) =>
                 {
                     return x.First().Id.ToString();
                 })]);
             wf.AddTask<ConsoleWrite, ConsoleWriteParams>("write2",
                 new ConsoleWriteParams(),
-                [new InputBinding<object, string>("Message", "ExecSql2", "Result", (x) =>
+                [new InputBinding<object, string>("Message", "ExecSql2", "Result", (globalContext, x) =>
                 {
                     return x?.ToString()??string.Empty;
                 })]);
@@ -156,15 +156,21 @@ namespace FMSoftlab.WorkflowTasks.Tests
                     CommandType=CommandType.Text,
                     ExecutionParams=new DynamicParameters(new { Id = 88888888 }),
                     Sql="select @id as Id"
-                }, [new InputBinding("TransactionManager", "TransactionManager", "Result")]);
+                }, [new ResultBinding("TransactionManager", "TransactionManager")]);
             wf.AddTask<RenderExcelTemplate, RenderExcelTemplateParams>("render",
                 new RenderExcelTemplateParams()
                 {
                     DataRoot="data",
                     TemplateContent=System.IO.File.ReadAllBytes(@"Files\test.xlsx"),
                 },
-                [new InputBinding("Datareader", "ExecSql", "Result")]);
-            wf.AddTask<WriteBytesToFile, WriteBytesToFileParams>("WriteFileToDisk", new WriteBytesToFileParams() { Filename="DataReaderExcel.xlsx", Folder=@"c:\temp", Timestamp="yyyyMMdd HHmmss" }, [new InputBinding("FileContent", "render", "Result")]);
+                [new ResultBinding("Datareader", "ExecSql")]);
+            wf.AddTask<WriteBytesToFile, WriteBytesToFileParams>("WriteFileToDisk",
+                new WriteBytesToFileParams()
+                {
+                    Filename="DataReaderExcel.xlsx",
+                    Folder=@"c:\temp",
+                    Timestamp="yyyyMMdd HHmmss"
+                }, [new ResultBinding("FileContent", "render")]);
             wf.AddTask<TransactionCommit, CompleteTransactionParams>("TransactionCommit", new CompleteTransactionParams("TransactionManager"));
             await wf.Start();
         }

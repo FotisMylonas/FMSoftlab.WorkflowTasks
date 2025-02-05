@@ -16,7 +16,7 @@ namespace FMSoftlab.WorkflowTasks.Tasks
         }
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<string>("Message", globalContext, (value) => Message=value);
+            _bindings.SetValueIfBindingExists<string>("Message", globalContext, (globalContext, value) => Message=value);
         }
     }
     public class ConsoleWrite : BaseTaskWithParams<ConsoleWriteParams>

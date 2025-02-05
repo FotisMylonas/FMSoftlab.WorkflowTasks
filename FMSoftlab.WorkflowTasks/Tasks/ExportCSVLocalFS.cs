@@ -22,7 +22,7 @@ namespace FMSoftlab.WorkflowTasks
         }
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<string>("CsvContent", globalContext, (value) => CsvContent =value);
+            _bindings.SetValueIfBindingExists<string>("CsvContent", globalContext, (globalContext, value) => CsvContent =value);
         }
     }
     public class ExportCSVLocalFS : BaseTaskWithParams<ExportCSVLocalFSParams>

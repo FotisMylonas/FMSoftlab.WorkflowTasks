@@ -56,8 +56,8 @@ namespace FMSoftlab.WorkflowTasks
         }
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<object>("ExecutionParams", globalContext, (value) => ExecutionParams=value);
-            _bindings.SetValueIfBindingExists<ISingleTransactionManager>("TransactionManager", globalContext, (value) => TransactionManager=value);
+            _bindings.SetValueIfBindingExists<object>("ExecutionParams", globalContext, (globalContext, value) => ExecutionParams=value);
+            _bindings.SetValueIfBindingExists<ISingleTransactionManager>("TransactionManager", globalContext, (globalContext, value) => TransactionManager=value);
         }
     }
     public class ExecuteSQL : BaseTaskWithParams<ExecuteSQLParams>

@@ -36,8 +36,8 @@ namespace FMSoftlab.WorkflowTasks
         }
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<IEnumerable<dynamic>>("Data", globalContext, (value) => Data =value);
-            _bindings.SetValueIfBindingExists<IEnumerable<FieldInfo>>("FieldsInfo", globalContext, (value) =>
+            _bindings.SetValueIfBindingExists<IEnumerable<dynamic>>("Data", globalContext, (globalContext, value) => Data =value);
+            _bindings.SetValueIfBindingExists<IEnumerable<FieldInfo>>("FieldsInfo", globalContext, (globalContext, value) =>
             {
                 if (value?.Any() ?? false)
                 {

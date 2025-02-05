@@ -19,7 +19,7 @@ namespace FMSoftlab.WorkflowTasks.Tasks
 
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<byte[]>("FileContent", globalContext, (value) => FileContent=value);
+            _bindings.SetValueIfBindingExists<byte[]>("FileContent", globalContext, (globalContext, value) => FileContent=value);
         }
     }
     public class WriteBytesToFile : BaseTaskWithParams<WriteBytesToFileParams>

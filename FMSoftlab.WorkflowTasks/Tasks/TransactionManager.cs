@@ -74,7 +74,7 @@ namespace FMSoftlab.WorkflowTasks.Tasks
 
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<ISingleTransactionManager>("TransactionManager", globalContext, (value) => TransactionManager = value);
+            _bindings.SetValueIfBindingExists<ISingleTransactionManager>("TransactionManager", globalContext, (globalContext, value) => TransactionManager = value);
         }
     }
 

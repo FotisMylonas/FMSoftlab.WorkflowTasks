@@ -18,7 +18,7 @@ namespace FMSoftlab.WorkflowTasks
         public string ResultName { get; set; }
         public object ResultValue { get; set; }
     }
-    internal static class StringExtensions     
+    internal static class StringExtensions
     {
         public static string GetFirstNChars(this string input, int n)
         {
@@ -30,15 +30,17 @@ namespace FMSoftlab.WorkflowTasks
     }
     public interface IGlobalContext
     {
-        //public IDictionary<string, object> TaskParameters { get; }
         ILoggerFactory LoggerFactory { get; }
         List<StepResult> Results { get; }
-        object GetTaskVariable(string stepName, string resultName);
-        object GetTaskResult(string stepName);
-        object GetGlobalVariable(string resultName);
-        void SetTaskVariable(string stepName, string resultName, object Value);
-        void SetTaskResult(string stepName, object value);
-        void SetGlobalVariable(string resultName, object value);
+        object GetTaskVariable(string task, string variable);
+        T GetTaskVariableAs<T>(string task, string variable);
+        T GetTaskVariableAs<T>(string variable);
+        object GetTaskResult(string task);
+        T GetTaskResultAs<T>(string task);
+        object GetGlobalVariable(string variable);
+        void SetTaskVariable(string task, string variable, object Value);
+        void SetTaskResult(string task, object value);
+        void SetGlobalVariable(string variable, object value);
     }
     public class GlobalContext : IGlobalContext
     {
@@ -50,17 +52,17 @@ namespace FMSoftlab.WorkflowTasks
             LoggerFactory=loggerFactory;
             Results = new List<StepResult>();
         }
-        public object GetTaskResult(string stepName)
+        public object GetTaskResult(string task)
         {
-            return GetTaskVariable(stepName, "Result");
+            return GetTaskVariable(task, "Result");
         }
-        public object GetTaskVariable(string stepName, string variableName)
+        public object GetTaskVariable(string task, string variable)
         {
             object res = null;
             var item = Results.FirstOrDefault(
                 x =>
-                string.Equals(x.StepName, stepName, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(x.ResultName, variableName, StringComparison.OrdinalIgnoreCase)
+                string.Equals(x.StepName, task, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.ResultName, variable, StringComparison.OrdinalIgnoreCase)
             );
             if (item != null)
             {
@@ -68,20 +70,20 @@ namespace FMSoftlab.WorkflowTasks
             }
             return res;
         }
-        public object GetGlobalVariable(string resultName)
+        public object GetGlobalVariable(string variable)
         {
-            return GetTaskVariable("Global", resultName);
+            return GetTaskVariable("Global", variable);
         }
-        public void SetTaskResult(string stepName, object value)
+        public void SetTaskResult(string task, object value)
         {
-            SetTaskVariable(stepName, "Result", value);
+            SetTaskVariable(task, "Result", value);
         }
-        public void SetTaskVariable(string stepName, string variableName, object value)
+        public void SetTaskVariable(string task, string variable, object value)
         {
             var item = Results.FirstOrDefault(
                 x =>
-                string.Equals(x.StepName, stepName, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(x.ResultName, variableName, StringComparison.OrdinalIgnoreCase)
+                string.Equals(x.StepName, task, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.ResultName, variable, StringComparison.OrdinalIgnoreCase)
             );
             if (item!=null)
             {
@@ -89,12 +91,31 @@ namespace FMSoftlab.WorkflowTasks
             }
             else
             {
-                Results.Add(new StepResult { StepName=stepName, ResultName=variableName, ResultValue=value });
+                Results.Add(new StepResult { StepName=task, ResultName=variable, ResultValue=value });
             }
         }
-        public void SetGlobalVariable(string resultName, object value)
+        public void SetGlobalVariable(string result, object value)
         {
-            SetTaskVariable("Global", resultName, value);
+            SetTaskVariable("Global", result, value);
+        }
+        public T GetTaskResultAs<T>(string task)
+        {
+            return GetTaskVariableAs<T>(task, "Result");
+        }
+        public T GetTaskVariableAs<T>(string task, string variable)
+        {
+            T result = default;
+            object obj = GetTaskVariableAs<T>(task, variable);
+            if (obj is T)
+            {
+                result = (T)obj;
+            }
+            return result;
+        }
+        public T GetTaskVariableAs<T>(string variable)
+        {
+            string[] parts = variable.Split('.');
+            return GetTaskVariableAs<T>(parts[0], parts[1]);
         }
     }
     public abstract class BaseTask
@@ -262,6 +283,5 @@ namespace FMSoftlab.WorkflowTasks
             TaskParams=taskParams;
             _taskParams=taskParams;
         }
-
     }
 }

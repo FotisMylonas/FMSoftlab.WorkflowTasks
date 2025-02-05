@@ -18,6 +18,16 @@ jobs:
     - name: 'Checkout'
       uses: actions/checkout@v2
 
+    - name: 'Get version'
+      id: version
+      uses: battila7/get-version-action@v2
+        
+    - name: Update Version in .csproj
+      run: |
+        sed -i "s|<Version>.*</Version>|<Version>${{ steps.version.outputs.version-without-v }}</Version>|" ${{ env.PROJECT_PATH }}
+        sed -i "s|<AssemblyVersion>.*</AssemblyVersion>|<AssemblyVersion>${{ steps.version.outputs.version-without-v }}.0</AssemblyVersion>|" ${{ env.PROJECT_PATH }}
+        sed -i "s|<FileVersion>.*</FileVersion>|<FileVersion>${{ steps.version.outputs.version-without-v }}.0</FileVersion>|" ${{ env.PROJECT_PATH }}
+
     - name: 'Install dotnet'
       uses: actions/setup-dotnet@v1
       with:
@@ -28,10 +38,6 @@ jobs:
     
     - name: 'Build project'
       run: dotnet build ${{ env.PROJECT_PATH }} --no-restore --configuration Release
-
-    - name: 'Get version'
-      id: version
-      uses: battila7/get-version-action@v2
 
     - name: 'Pack project'
       run: dotnet pack ${{ env.PROJECT_PATH  }} --no-restore --no-build --configuration Release --include-symbols -p:PackageVersion=${{ steps.version.outputs.version-without-v }} --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }}

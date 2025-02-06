@@ -12,6 +12,11 @@ using static Dapper.SqlMapper;
 
 namespace FMSoftlab.WorkflowTasks
 {
+    public static class WorkflowConstants
+    {
+        public const int STRINGLIMIT = 5000;
+    }
+
     public class StepResult
     {
         public string StepName { get; set; }
@@ -120,7 +125,6 @@ namespace FMSoftlab.WorkflowTasks
     }
     public abstract class BaseTask
     {
-        private const int STRINGLIMIT = 10000;
         protected TaskParamsBase _taskParams;
         public string Name { get; }
         protected readonly ILogger _log;
@@ -199,13 +203,13 @@ namespace FMSoftlab.WorkflowTasks
                             {
                                 foreach (var dictItem in dict)
                                 {
-                                    string svalue = dictItem.Value?.ToString()?.GetFirstNChars(STRINGLIMIT);
+                                    string svalue = dictItem.Value?.ToString()?.GetFirstNChars(WorkflowConstants.STRINGLIMIT);
                                     sb.AppendLine($"{dictItem.Key}:{svalue}");
                                 }
                             }
                             else
                             {
-                                string svalue = value.ToString()?.GetFirstNChars(STRINGLIMIT);
+                                string svalue = value.ToString()?.GetFirstNChars(WorkflowConstants.STRINGLIMIT);
                                 sb.AppendLine($"{property.Name}:{svalue}");
                             }
                         }

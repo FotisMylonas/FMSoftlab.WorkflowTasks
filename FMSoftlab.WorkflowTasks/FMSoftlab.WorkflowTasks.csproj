@@ -12,7 +12,7 @@
 	<ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.44" />
     <PackageReference Include="Fluid.Core" Version="2.19.0" />
-    <PackageReference Include="FMSoftlab.DataAccess" Version="1.1.5" />
+    <PackageReference Include="FMSoftlab.DataAccess" Version="1.1.23" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.1" />
     <PackageReference Include="miniexcel" Version="1.37.0" />

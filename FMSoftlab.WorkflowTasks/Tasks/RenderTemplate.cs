@@ -26,8 +26,8 @@ namespace FMSoftlab.WorkflowTasks
 
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<IDictionary<string, object>>("RenderingData", globalContext, (globalContext, value) => RenderingData = value);
             _bindings.SetValueIfBindingExists<string>("Template", globalContext, (globalContext, value) => Template = value);
+            _bindings.SetValueIfBindingExists<IDictionary<string, object>>("RenderingData", globalContext, (globalContext, value) => RenderingData = value);
         }
     }
     public class RenderTemplate : BaseTaskWithParams<RenderTemplateParams>
@@ -45,9 +45,13 @@ namespace FMSoftlab.WorkflowTasks
         public override async Task Execute()
         {
             if (TaskParams?.RenderingData==null)
+            {
+                _log?.LogWarning($@"Task:{Name}, RenderingData is empty, exiting");
                 return;
+            }
             if (!(TaskParams?.RenderingData?.Any() ?? false))
             {
+                _log?.LogWarning($@"Task:{Name}, RenderingData is empty, exiting");
                 return;
             }
             if (string.IsNullOrWhiteSpace(TaskParams.Template))

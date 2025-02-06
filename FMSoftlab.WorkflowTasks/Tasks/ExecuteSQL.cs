@@ -209,16 +209,26 @@ namespace FMSoftlab.WorkflowTasks
                 {
                     dbres = await sqlExecution.Query<TSqlResults>();
                     _log?.LogDebug($"Step:{Name}, ExecuteSQLTyped, executed {sql}, MultiRow:{TaskParams.MultiRow}, rows returned:{dbres?.Count()}");
-                    res=dbres;
-                    if (dbres!=null && !TaskParams.MultiRow)
+                    if (dbres==null)
                     {
+                        _log?.LogWarning($"Step:{Name}, null db result, exiting...");
+                        return;
+                    }
+                    if (!TaskParams.MultiRow)
+                    {
+                        _log?.LogTrace($"Step:{Name}, SingleOrDefault result");
                         res=dbres.SingleOrDefault();
+                    }
+                    else
+                    {
+                        _log?.LogTrace($"Step:{Name}, Multirow result");
+                        res=dbres;
                     }
                 }
                 else
                 {
                     res = await sqlExecution.ExecuteScalar<TSqlResults>();
-                    _log?.LogDebug($"Step:{Name}, executed scalar {sql}, MultiRow:{TaskParams.MultiRow}, res:{res}");
+                    _log?.LogDebug($"Step:{Name}, executed scalar {sql}, MultiRow:{TaskParams.MultiRow}, res:{res?.ToString()?.GetFirstNChars(WorkflowConstants.STRINGLIMIT)}");
                 }
                 SetTaskResult(res);
             }

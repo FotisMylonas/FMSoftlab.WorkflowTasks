@@ -51,6 +51,7 @@ namespace FMSoftlab.WorkflowTasks
                 return;
             try
             {
+                _log?.LogTrace($"RenderExcelTemplate, closing datareader...");
                 TaskParams.DataReader.Close();
             }
             catch (Exception ex)
@@ -59,6 +60,7 @@ namespace FMSoftlab.WorkflowTasks
             }
             finally
             {
+                _log?.LogTrace($"RenderExcelTemplate, disposing datareader...");
                 TaskParams.DataReader.Dispose();
                 TaskParams.DataReader = null;
             }

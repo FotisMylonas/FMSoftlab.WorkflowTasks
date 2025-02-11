@@ -16,20 +16,13 @@ using System.Threading.Tasks;
 
 namespace FMSoftlab.WorkflowTasks
 {
-    public class ExcelRendererInternalSettings 
-    {
-        public CultureInfo Culture { get; set; }
-        public TableStyles TableStyles { get; set; }
-        public bool EnableSharedStringCache { get; set; }
-        public int SharedStringCacheSize { get; set; }
-    }
     public class RenderExcelTemplateParams : TaskParamsBase
     {
         public byte[] TemplateContent { get; set; }
         public IDataReader DataReader { get; set; }
         public IEnumerable<object> RenderingData { get; set; }
         public string DataRoot { get; set; }
-        public ExcelRendererInternalSettings ExcelRendererInternalSettings { get; set; }
+        public OpenXmlConfiguration OpenXmlConfiguration { get; set; }
         public RenderExcelTemplateParams(IEnumerable<InputBinding> bindings) : base(bindings)
         {
 
@@ -115,20 +108,9 @@ namespace FMSoftlab.WorkflowTasks
                     }
                     try
                     {
-                        IConfiguration config = null;
-                        if (TaskParams.ExcelRendererInternalSettings!=null)
-                        {
-                            ExcelRendererInternalSettings settings = TaskParams.ExcelRendererInternalSettings;
-                            OpenXmlConfiguration rendererConfig = new OpenXmlConfiguration()
-                            {
-                                TableStyles=settings.TableStyles,
-                                EnableSharedStringCache=settings.EnableSharedStringCache,
-                                SharedStringCacheSize=settings.SharedStringCacheSize,
-                                Culture=settings.Culture
-                            };
-                            string json = JsonSerializer.Serialize(rendererConfig);
-                            _log.LogInformation("MiniExcel settings: {json}", json);
-                        }
+                        OpenXmlConfiguration config = TaskParams.OpenXmlConfiguration!=null ? TaskParams.OpenXmlConfiguration : new OpenXmlConfiguration();
+                        string json = JsonSerializer.Serialize(config);
+                        _log.LogInformation("MiniExcel settings: {json}", json);
                         await MiniExcel.SaveAsByTemplateAsync(ms, TaskParams.TemplateContent, rdata, config);
                     }
                     finally

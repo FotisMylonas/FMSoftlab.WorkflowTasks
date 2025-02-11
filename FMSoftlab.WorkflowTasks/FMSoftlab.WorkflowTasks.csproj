@@ -11,7 +11,7 @@
 
 
 	<ItemGroup>
-    <PackageReference Include="Dapper" Version="2.1.44" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Fluid.Core" Version="2.19.0" />
     <PackageReference Include="FMSoftlab.DataAccess" Version="1.1.23" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />

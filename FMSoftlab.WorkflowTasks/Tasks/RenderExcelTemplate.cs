@@ -109,8 +109,12 @@ namespace FMSoftlab.WorkflowTasks
                     try
                     {
                         OpenXmlConfiguration config = TaskParams.OpenXmlConfiguration!=null ? TaskParams.OpenXmlConfiguration : new OpenXmlConfiguration();
-                        string json = JsonSerializer.Serialize(config);
-                        _log.LogInformation("MiniExcel settings: {json}", json);
+                        //string json = JsonSerializer.Serialize(config);
+                        _log.LogInformation("MiniExcel settings: TableStyles:{TableStyles}, Culture.Name:{CultureName}, SharedStringCacheSize:{SharedStringCacheSize}, EnableSharedStringCache:{EnableSharedStringCache}",
+                            config.TableStyles, 
+                            config.Culture.Name,
+                            config.SharedStringCacheSize,
+                            config.EnableSharedStringCache);
                         await MiniExcel.SaveAsByTemplateAsync(ms, TaskParams.TemplateContent, rdata, config);
                     }
                     finally

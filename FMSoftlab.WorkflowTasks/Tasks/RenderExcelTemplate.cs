@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Client;
 using MiniExcelLibs;
+using MiniExcelLibs.OpenXml;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -103,7 +104,11 @@ namespace FMSoftlab.WorkflowTasks
                     }
                     try
                     {
-                        await MiniExcel.SaveAsByTemplateAsync(ms, TaskParams.TemplateContent, rdata);
+                        var config = new OpenXmlConfiguration()
+                        {
+                            TableStyles=TableStyles.Default
+                        };
+                        await MiniExcel.SaveAsByTemplateAsync(ms, TaskParams.TemplateContent, rdata, config);                            
                     }
                     finally
                     {

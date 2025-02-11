@@ -7,18 +7,29 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace FMSoftlab.WorkflowTasks
 {
+    public class ExcelRendererInternalSettings 
+    {
+        public CultureInfo Culture { get; set; }
+        public TableStyles TableStyles { get; set; }
+        public bool EnableSharedStringCache { get; set; }
+        public int SharedStringCacheSize { get; set; }
+    }
     public class RenderExcelTemplateParams : TaskParamsBase
     {
         public byte[] TemplateContent { get; set; }
         public IDataReader DataReader { get; set; }
         public IEnumerable<object> RenderingData { get; set; }
         public string DataRoot { get; set; }
+        public ExcelRendererInternalSettings ExcelRendererInternalSettings { get; set; }
         public RenderExcelTemplateParams(IEnumerable<InputBinding> bindings) : base(bindings)
         {
 
@@ -104,11 +115,21 @@ namespace FMSoftlab.WorkflowTasks
                     }
                     try
                     {
-                        var config = new OpenXmlConfiguration()
+                        IConfiguration config = null;
+                        if (TaskParams.ExcelRendererInternalSettings!=null)
                         {
-                            TableStyles=TableStyles.Default
-                        };
-                        await MiniExcel.SaveAsByTemplateAsync(ms, TaskParams.TemplateContent, rdata, config);                            
+                            ExcelRendererInternalSettings settings = TaskParams.ExcelRendererInternalSettings;
+                            OpenXmlConfiguration rendererConfig = new OpenXmlConfiguration()
+                            {
+                                TableStyles=settings.TableStyles,
+                                EnableSharedStringCache=settings.EnableSharedStringCache,
+                                SharedStringCacheSize=settings.SharedStringCacheSize,
+                                Culture=settings.Culture
+                            };
+                            string json = JsonSerializer.Serialize(rendererConfig);
+                            _log.LogInformation("MiniExcel settings: {json}", json);
+                        }
+                        await MiniExcel.SaveAsByTemplateAsync(ms, TaskParams.TemplateContent, rdata, config);
                     }
                     finally
                     {

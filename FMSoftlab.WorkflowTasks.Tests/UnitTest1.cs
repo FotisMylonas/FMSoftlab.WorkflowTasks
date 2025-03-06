@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
 using System.Data;
+using System.IO.Compression;
 
 namespace FMSoftlab.WorkflowTasks.Tests
 {
@@ -71,7 +72,7 @@ namespace FMSoftlab.WorkflowTasks.Tests
         }
 
         [Fact]
-        public async Task Test1()
+        public async Task ConnectToDbReturnValue()
         {
             Workflow wf = new Workflow("test", _loggerFactory);
             wf.AddTask<ExecuteSQLTyped<SqlResultTest>, ExecuteSQLParams>("ExecSql",
@@ -172,6 +173,37 @@ namespace FMSoftlab.WorkflowTasks.Tests
                     Timestamp="yyyyMMdd HHmmss"
                 }, [new ResultBinding("FileContent", "render")]);
             wf.AddTask<TransactionCommit, CompleteTransactionParams>("TransactionCommit", new CompleteTransactionParams("TransactionManager"));
+            await wf.Start();
+        }
+
+        [Fact]
+        public async Task CopyFolder()
+        {
+            ILogger<Workflow> log = _loggerFactory.CreateLogger<Workflow>();
+            Workflow wf = new Workflow("test", _loggerFactory);
+            wf.AddTask<CopyFolder, CopyFolderParams>("CopyFolder",
+                new CopyFolderParams()
+                {
+                    SourceFolder=@"c:\temp\build_20230205_091726",
+                    DestinationFolder=@"c:\temp\destination\build_20230205_091726"
+                });
+            await wf.Start();
+        }
+
+        [Fact]
+        public async Task ZipFolder()
+        {
+            ILogger<Workflow> log = _loggerFactory.CreateLogger<Workflow>();
+            Workflow wf = new Workflow("test", _loggerFactory);
+            wf.AddTask<FileZipper, FileZipperParams>("ZipFolder",
+                new FileZipperParams()
+                {
+                    CompressionLevel=CompressionLevel.Optimal,
+                    SourceDirectory=@"C:\temp\build_20230205_091726",
+                    DestinationZipFile=@"c:\temp\destination\build_20230205_091726.zip",
+                    IncludeBaseDirectory=true
+
+                });
             await wf.Start();
         }
     }

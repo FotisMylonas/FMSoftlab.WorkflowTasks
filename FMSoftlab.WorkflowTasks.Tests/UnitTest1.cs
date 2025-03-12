@@ -23,7 +23,7 @@ namespace FMSoftlab.WorkflowTasks.Tests
             var logger = new LoggerConfiguration()
           .MinimumLevel.Verbose()
           .WriteTo.Console()
-          .WriteTo.File(@"c:\temp\WorkflowTests.log", rollingInterval: RollingInterval.Day)
+          .WriteTo.File(@"C:\NetPandektisOutput\WorkflowTests.log", rollingInterval: RollingInterval.Day)
           .CreateLogger();
 
             _loggerFactory = new SerilogLoggerFactory(logger);
@@ -184,8 +184,8 @@ namespace FMSoftlab.WorkflowTasks.Tests
             wf.AddTask<CopyFolder, CopyFolderParams>("CopyFolder",
                 new CopyFolderParams()
                 {
-                    SourceFolder=@"c:\temp\build_20230205_091726",
-                    DestinationFolder=@"c:\temp\destination\build_20230205_091726"
+                    SourceFolder=@"C:\NetPandektisOutput",
+                    DestinationFolder=@"c:\temp\destination\build_20230205_093753"
                 });
             await wf.Start();
         }

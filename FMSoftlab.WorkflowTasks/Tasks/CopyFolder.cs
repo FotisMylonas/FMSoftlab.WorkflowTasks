@@ -22,7 +22,7 @@ namespace FMSoftlab.WorkflowTasks.Tasks
     }
     public class CopyFolder : BaseTaskWithParams<CopyFolderParams>
     {
-        class FileCopyInfo 
+        class FileCopyInfo
         {
             public string SourceFile { get; set; }
             public string DestinationFolder { get; set; }
@@ -34,12 +34,15 @@ namespace FMSoftlab.WorkflowTasks.Tasks
 
         public CopyFolder(string name, IGlobalContext globalContext, CopyFolderParams taskParams, ILogger log) : base(name, globalContext, taskParams, log)
         {
-            // Create an ActionBlock that processes file copy operations asynchronously
+
         }
 
         private async Task CopyFilesRecursivelyAsync(string source, string destination)
         {
             // Create destination directory if it doesn't exist
+            source = Path.GetFullPath(source);
+            destination = Path.GetFullPath(destination);
+            _log?.LogDebug($"Copying {source} to {destination}");
             Directory.CreateDirectory(destination);
 
             // Process directories recursively
@@ -161,17 +164,18 @@ namespace FMSoftlab.WorkflowTasks.Tasks
             if (TaskParams is null)
             {
                 _log?.LogWarning("CopyFiles, No params defined");
+                return;
             }
             if (string.IsNullOrWhiteSpace(TaskParams.SourceFolder) || string.IsNullOrWhiteSpace(TaskParams.DestinationFolder))
             {
                 _log?.LogWarning("CopyFiles, Source and destination folders must be specified");
+                return;
             }
             if (!Directory.Exists(TaskParams.SourceFolder))
             {
                 _log.LogWarning("Source folder not found: {SourceFolder}", TaskParams.SourceFolder);
                 return;
             }
-
             await CopyFilesRecursivelyAsync(TaskParams.SourceFolder, TaskParams.DestinationFolder);
         }
     }

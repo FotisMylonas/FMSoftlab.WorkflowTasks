@@ -52,13 +52,15 @@ namespace FMSoftlab.WorkflowTasks.Tasks
         public override async Task Execute()
         {
             IISManager manager = new IISManager(_log);
-            await manager.SetupIIS(
-                TaskParams.SiteName,
+            await manager.CreateApplicationPool(
                 TaskParams.ApplicationPool.Name,
                 TaskParams.ApplicationPool.Identity.Username,
-                TaskParams.ApplicationPool.Identity.Password,
+                TaskParams.ApplicationPool.Identity.Password);
+            await manager.CreateVirtualApplication(
+                TaskParams.SiteName,
                 TaskParams.VirtualPath,
-                TaskParams.PhysicalPath);
+                TaskParams.PhysicalPath,
+                TaskParams.ApplicationPool.Name);
         }
     }
     public class IISManager
@@ -68,14 +70,18 @@ namespace FMSoftlab.WorkflowTasks.Tasks
         {
             _log=log;
         }
-        public void CreateApplicationPool(string appPoolName, string domainUser, string password)
+        public async Task CreateApplicationPool(string appPoolName, string domainUser, string password)
         {
-            using (ServerManager serverManager = new ServerManager())
+            await Task.Run(() =>
             {
-                ApplicationPool appPool = serverManager.ApplicationPools[appPoolName];
-
-                if (appPool == null)
+                using (ServerManager serverManager = new ServerManager())
                 {
+                    ApplicationPool appPool = serverManager.ApplicationPools[appPoolName];
+
+                    if (appPool != null)
+                    {
+                        _log?.LogWarning($"Application Pool '{appPoolName}' already exists.");
+                    }
                     appPool = serverManager.ApplicationPools.Add(appPoolName);
                     appPool.ProcessModel.IdentityType = ProcessModelIdentityType.SpecificUser;
                     appPool.ProcessModel.UserName = domainUser;
@@ -84,48 +90,52 @@ namespace FMSoftlab.WorkflowTasks.Tasks
                     serverManager.CommitChanges();
                     _log?.LogInformation($"Application Pool '{appPoolName}' created successfully.");
                 }
-                else
-                {
-                    _log?.LogWarning($"Application Pool '{appPoolName}' already exists.");
-                }
-            }
+            });
         }
 
-        public void CreateVirtualApplication(string siteName, string appPath, string physicalPath, string appPoolName)
+        public async Task CreateVirtualApplication(string siteName, string appPath, string physicalPath, string appPoolName)
         {
-            using (ServerManager serverManager = new ServerManager())
+            await Task.Run(() =>
             {
-                Site site = serverManager.Sites[siteName];
-
-                if (site == null)
+                using (ServerManager serverManager = new ServerManager())
                 {
-                    _log?.LogWarning($"Site '{siteName}' not found.");
-                    return;
-                }
-                Application app = site.Applications[appPath];
+                    Site site = serverManager.Sites[siteName];
 
-                if (app == null)
-                {
+                    if (site == null)
+                    {
+                        _log?.LogWarning($"Site '{siteName}' not found.");
+                        return;
+                    }
+                    Application app = site.Applications[appPath];
+
+                    if (app != null)
+                    {
+                        _log?.LogWarning($"Application '{appPath}' already exists under site '{siteName}'.");
+                    }
                     app = site.Applications.Add(appPath, physicalPath);
                     app.ApplicationPoolName = appPoolName;
 
                     serverManager.CommitChanges();
                     _log?.LogInformation($"Virtual application '{appPath}' created under site '{siteName}'.");
                 }
-                else
-                {
-                    _log?.LogWarning($"Application '{appPath}' already exists under site '{siteName}'.");
-                }
-            }
+            });
         }
 
-        public async Task SetupIIS(string siteName, string appPoolName, string domainUser, string password, string appPath, string physicalPath)
+        public async Task StopApplicationPool(string applicationPool)
         {
-            await Task.Run(() =>
-            {
-                CreateApplicationPool(appPoolName, domainUser, password);
-                CreateVirtualApplication(siteName, appPath, physicalPath, appPoolName);
-            });
+            await Task.CompletedTask;
+        }
+        public async Task StartApplicationPool(string applicationPool)
+        {
+            await Task.CompletedTask;
+        }
+        public async Task StopIIS(string applicationPool)
+        {
+            await Task.CompletedTask;
+        }
+        public async Task StartIIS(string applicationPool)
+        {
+            await Task.CompletedTask;
         }
     }
 

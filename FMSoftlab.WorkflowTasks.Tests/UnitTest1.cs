@@ -53,19 +53,19 @@ namespace FMSoftlab.WorkflowTasks.Tests
                     ConnectionString=@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true",
                     CommandType=CommandType.Text,
                     Sql="select @id as Id"
-                }, [new InputBinding<int, object>("ExecutionParams", "ExecSql1", "Result", (globalContext, x) =>
+                }, [new ResultBinding<int, object>("ExecutionParams", "ExecSql1", (globalContext, x) =>
                 {
                     return new { Id = x };
                 })]);
             wf.AddTask<ConsoleWrite, ConsoleWriteParams>("write1",
                 new ConsoleWriteParams(),
-                [new InputBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql2", "Result", (globalContext, x) =>
+                [new ResultBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql2", (globalContext, x) =>
                 {
                     return x.First().Id.ToString();
                 })]);
             await wf.Start();
-            var res1 = wf.GetTaskVariable("ExecSql1", "Result");
-            var res2 = wf.GetTaskVariable("write1", "Result");
+            var res1 = wf.GetTaskResult("ExecSql1");
+            var res2 = wf.GetTaskResult("write1");
             Assert.NotNull(res1);
             Assert.NotNull(res2);
             Assert.Equal(value.ToString(), res1.ToString());
@@ -98,19 +98,19 @@ namespace FMSoftlab.WorkflowTasks.Tests
                 });
             wf.AddTask<ConsoleWrite, ConsoleWriteParams>("write1",
                 new ConsoleWriteParams(),
-                [new InputBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql", "Result", (globalContext, x) =>
+                [new ResultBinding<IEnumerable<SqlResultTest>, string>("Message", "ExecSql", (globalContext, x) =>
                 {
                     return x.First().Id.ToString();
                 })]);
             wf.AddTask<ConsoleWrite, ConsoleWriteParams>("write2",
                 new ConsoleWriteParams(),
-                [new InputBinding<object, string>("Message", "ExecSql2", "Result", (globalContext, x) =>
+                [new ResultBinding<object, string>("Message", "ExecSql2", (globalContext, x) =>
                 {
                     return x?.ToString()??string.Empty;
                 })]);
             await wf.Start();
-            var res1 = wf.GetTaskVariable("write1", "Result");
-            var res2 = wf.GetTaskVariable("write2", "Result");
+            var res1 = wf.GetTaskResult("write1");
+            var res2 = wf.GetTaskResult("write2");
             Assert.NotNull(res1);
             Assert.NotNull(res2);
             Assert.Equal("88888888", res1.ToString());
@@ -198,9 +198,46 @@ namespace FMSoftlab.WorkflowTasks.Tests
             wf.AddTask<FileZipper, FileZipperParams>("ZipFolder",
                 new FileZipperParams()
                 {
+                    ZipAction=ZipAction.Zip,
                     CompressionLevel=CompressionLevel.Optimal,
-                    SourceDirectory=@"C:\temp\build_20230205_091726",
-                    DestinationZipFile=@"c:\temp\destination\build_20230205_091726.zip",
+                    Source=@".\files\zip",
+                    Destination=@".\files\test123.zip",
+                    IncludeBaseDirectory=true
+
+                });
+            await wf.Start();
+        }
+
+        [Fact]
+        public async Task ZipFolder_DoNot_IncludeBaseDirectory()
+        {
+            ILogger<Workflow> log = _loggerFactory.CreateLogger<Workflow>();
+            Workflow wf = new Workflow("test", _loggerFactory);
+            wf.AddTask<FileZipper, FileZipperParams>("ZipFolder",
+                new FileZipperParams()
+                {
+                    ZipAction=ZipAction.Zip,
+                    CompressionLevel=CompressionLevel.Optimal,
+                    Source=@".\files\zip",
+                    Destination=@".\files\test123.zip",
+                    IncludeBaseDirectory=false
+
+                });
+            await wf.Start();
+        }
+
+        [Fact]
+        public async Task UnzipFile()
+        {
+            ILogger<Workflow> log = _loggerFactory.CreateLogger<Workflow>();
+            Workflow wf = new Workflow("test", _loggerFactory);
+            wf.AddTask<FileZipper, FileZipperParams>("ZipFolder",
+                new FileZipperParams()
+                {
+                    ZipAction=ZipAction.Unzip,
+                    CompressionLevel=CompressionLevel.Optimal,
+                    Source=@".\files\test123.zip",
+                    Destination=@".\files\unzip",
                     IncludeBaseDirectory=true
 
                 });

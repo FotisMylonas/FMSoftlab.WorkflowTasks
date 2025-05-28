@@ -10,16 +10,26 @@ using Microsoft.Extensions.Logging;
 
 namespace FMSoftlab.WorkflowTasks.Tasks
 {
+    public enum ZipAction { None, Zip, Unzip };
+
     public class FileZipperParams : TaskParamsBase
     {
+        public ZipAction ZipAction { get; set; } = ZipAction.None;
         public CompressionLevel CompressionLevel { get; set; }
         public bool IncludeBaseDirectory { get; set; }
-        public string SourceDirectory { get; set; }
-        public string DestinationZipFile { get; set; }
+        public string Source { get; set; }
+        public string Destination { get; set; }
         public override void LoadResults(IGlobalContext globalContext)
         {
 
         }
+    }
+    public class UnzipProgress
+    {
+        public string FileName { get; set; } = string.Empty;
+        public int Current { get; set; }
+        public int Total { get; set; }
+        public double Percentage => Total > 0 ? (double)Current / Total * 100 : 0;
     }
     public class FileZipper : BaseTaskWithParams<FileZipperParams>
     {
@@ -30,27 +40,6 @@ namespace FMSoftlab.WorkflowTasks.Tasks
         public FileZipper(string name, IGlobalContext globalContext, FileZipperParams taskParams, ILogger log) : base(name, globalContext, taskParams, log)
         {
         }
-
-        /*private async Task<string> ZipDirectoryAsync(string sourceDirectory, string destinationZipFile)
-        {
-            if (!Directory.Exists(sourceDirectory))
-            {
-                _log?.LogError("Source directory not found: {SourceDirectory}", sourceDirectory);
-                throw new DirectoryNotFoundException($"Source directory not found: {sourceDirectory}");
-            }
-
-            _log?.LogInformation("Starting compression of {SourceDirectory} to {DestinationZipFile}", sourceDirectory, destinationZipFile);
-
-            await Task.Run(() => ZipFile.CreateFromDirectory(sourceDirectory, destinationZipFile, TaskParams.CompressionLevel, TaskParams.IncludeBaseDirectory));
-
-
-            _log?.LogInformation("Compression completed: {DestinationZipFile}", destinationZipFile);
-
-            string checksum = await ComputeFileChecksumAsync(destinationZipFile);
-            _log?.LogInformation("Checksum (SHA-256) for {DestinationZipFile}: {Checksum}", destinationZipFile, checksum);
-
-            return checksum;
-        }*/
 
         private async Task<string> ZipFolderWithProgressAsync(string sourceFolder, string zipFile, IProgress<double> progress)
         {
@@ -65,17 +54,34 @@ namespace FMSoftlab.WorkflowTasks.Tasks
 
             const int bufferSize = 81920; // 80KB buffer
             var allFiles = Directory.GetFiles(sourceFolder, "*", SearchOption.AllDirectories);
+            var allDirs = Directory.GetDirectories(sourceFolder, "*", new EnumerationOptions { RecurseSubdirectories=true });
 
             long totalBytes = allFiles.Sum(file => new FileInfo(file).Length);
             long bytesProcessed = 0;
 
+            string basePath = TaskParams.IncludeBaseDirectory
+                ? Path.GetDirectoryName(sourceFolder.TrimEnd(Path.DirectorySeparatorChar)) ?? string.Empty
+                : sourceFolder;
+
             using (FileStream zipToOpen = new FileStream(zipFile, FileMode.Create))
             using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Create, leaveOpen: false))
             {
+                // Add empty directories (ZipArchive requires a trailing slash to recognize folders)
+                foreach (var dir in allDirs)
+                {
+                    var relativeDir = Path.GetRelativePath(basePath, dir).Replace('\\', '/') + '/';
+                    /*if (!archive.Entries.Any(e => e.FullName.StartsWith(relativeDir, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        archive.CreateEntry(relativeDir); // Empty entry for the folder
+                    }*/
+                    archive.CreateEntry(relativeDir);
+                }
+
+                // Add all files
                 foreach (var file in allFiles)
                 {
-                    string relativePath = Path.GetRelativePath(sourceFolder, file);
-                    ZipArchiveEntry entry = archive.CreateEntry(relativePath, CompressionLevel.Optimal);
+                    string relativePath = Path.GetRelativePath(basePath, file).Replace('\\', '/');
+                    ZipArchiveEntry entry = archive.CreateEntry(relativePath, TaskParams.CompressionLevel);
 
                     using (FileStream fileToCompress = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, useAsync: true))
                     using (Stream entryStream = entry.Open())
@@ -91,6 +97,7 @@ namespace FMSoftlab.WorkflowTasks.Tasks
                     }
                 }
             }
+
             checksum = await ComputeFileChecksumAsync(zipFile);
             _log?.LogInformation("Checksum (SHA-256) for {DestinationZipFile}: {Checksum}", zipFile, checksum);
             return checksum;
@@ -104,23 +111,87 @@ namespace FMSoftlab.WorkflowTasks.Tasks
             return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
         }
 
+        private async Task UnzipAsync(
+            string zipPath, 
+            string extractPath, 
+            IProgress<UnzipProgress> progress = null)
+        {
+            await Task.Run(() =>
+            {
+                using ZipArchive archive = ZipFile.OpenRead(zipPath);
+
+                int totalEntries = archive.Entries.Count;
+                int processedEntries = 0;
+
+                foreach (var entry in archive.Entries)
+                {
+                    string destinationPath = Path.Combine(extractPath, entry.FullName);
+
+                    // Ensure destination directory exists
+                    string? destinationDir = Path.GetDirectoryName(destinationPath);
+                    if (!string.IsNullOrEmpty(destinationDir))
+                        Directory.CreateDirectory(destinationDir);
+
+                    // Only extract files (not directories)
+                    if (!string.IsNullOrEmpty(entry.Name))
+                    {
+                        entry.ExtractToFile(destinationPath, overwrite: true);
+                    }
+
+                    processedEntries++;
+                    progress?.Report(new UnzipProgress
+                    {
+                        FileName = entry.FullName,
+                        Current = processedEntries,
+                        Total = totalEntries
+                    });
+                }
+            });
+        }
+
         public override async Task Execute()
         {
-            if (!Path.Exists(TaskParams.SourceDirectory))
+            if (TaskParams.ZipAction==ZipAction.None)
             {
-                _log?.LogWarning("Source directory not found: {SourceDirectory}", TaskParams.SourceDirectory);
+                _log.LogWarning("zip action not defined");
                 return;
             }
-            if (string.IsNullOrWhiteSpace(TaskParams.DestinationZipFile))
+            if (TaskParams.ZipAction==ZipAction.Zip)
             {
-                _log?.LogWarning("undefined DestinationZipFile");
-                return;
+                if (!Path.Exists(TaskParams.Source))
+                {
+                    _log?.LogWarning("Source directory not found: {SourceDirectory}", TaskParams.Source);
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(TaskParams.Destination))
+                {
+                    _log?.LogWarning("undefined DestinationZipFile");
+                    return;
+                }
+                IProgress<double> progress = new Progress<double>(value =>
+                {
+                    _log?.LogInformation("Compression progress: {Progress:P}", value);
+                });
+                await ZipFolderWithProgressAsync(TaskParams.Source, TaskParams.Destination, progress);
             }
-            IProgress<double> progress = new Progress<double>(value =>
+            if (TaskParams.ZipAction==ZipAction.Unzip)
             {
-                _log?.LogInformation("Compression progress: {Progress:P}", value);
-            });
-            await ZipFolderWithProgressAsync(TaskParams.SourceDirectory, TaskParams.DestinationZipFile, progress);
+                if (!File.Exists(TaskParams.Source))
+                {
+                    _log?.LogWarning("Source zip file not found: {SourceZipFile}", TaskParams.Source);
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(TaskParams.Destination))
+                {
+                    _log?.LogWarning("undefined Destination folder for unzipping");
+                    return;
+                }
+                _log?.LogInformation("Unzipping {SourceZipFile} to {DestinationFolder}", TaskParams.Source, TaskParams.Destination);
+                await UnzipAsync(TaskParams.Source, TaskParams.Destination, new Progress<UnzipProgress>(progress =>
+                {
+                    _log?.LogInformation("Unzipping progress: {FileName} ({Current}/{Total}) - {Percentage:P}", progress.FileName, progress.Current, progress.Total, progress.Percentage);
+                }));
+            }
         }
     }
 }

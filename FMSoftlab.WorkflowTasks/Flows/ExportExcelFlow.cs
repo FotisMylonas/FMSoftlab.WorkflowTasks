@@ -138,8 +138,8 @@ namespace FMSoftlab.WorkflowTasks.Flows
             wf.AddTask<ReadFileAsBytes, ReadFileAsBytesParams>("ReadTemplate", p3);
             RenderExcelTemplateParams p4 = new RenderExcelTemplateParams() { DataRoot=_exportExcelFlowParams.DataRoot };
             wf.AddTask<RenderExcelTemplate, RenderExcelTemplateParams>("RenderExcel", p4,
-                [new InputBinding("RenderingData", "ExportData", "Result"),
-                new InputBinding("TemplateContent", "ReadTemplate", "Result")]
+                [new ResultBinding("RenderingData", "ExportData"),
+                new ResultBinding("TemplateContent", "ReadTemplate")]
             );
             WriteBytesToFileParams p5 = new WriteBytesToFileParams()
             {
@@ -148,7 +148,7 @@ namespace FMSoftlab.WorkflowTasks.Flows
                 Folder = _exportExcelFlowParams.ExportFolder
             };
             wf.AddTask<WriteBytesToFile, WriteBytesToFileParams>("writebytes", p5,
-                [new InputBinding("FileContent", "RenderExcel", "Result")]);
+                [new ResultBinding("FileContent", "RenderExcel")]);
         }
         public async Task Execute()
         {

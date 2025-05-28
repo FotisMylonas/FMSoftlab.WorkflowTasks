@@ -12,13 +12,15 @@
 
 	<ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="Fluid.Core" Version="2.19.0" />
-    <PackageReference Include="FMSoftlab.DataAccess" Version="1.1.25" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.1" />
+    <PackageReference Include="Fluid.Core" Version="2.24.0" />
+    <PackageReference Include="FMSoftlab.DataAccess" Version="1.1.27" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Graph" Version="5.79.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.72.1" />
     <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
-    <PackageReference Include="miniexcel" Version="1.37.0" />
-    <PackageReference Include="System.Management" Version="9.0.2" />
+    <PackageReference Include="miniexcel" Version="1.41.2" />
+    <PackageReference Include="System.Management" Version="9.0.5" />
   </ItemGroup>
 
 </Project>

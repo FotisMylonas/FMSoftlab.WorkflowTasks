@@ -88,7 +88,7 @@ namespace FMSoftlab.WorkflowTasks.Tasks
             var sites = await graphClient.Sites.GetAsync();
             if (sites is null || sites.Value is null)
             {
-                _log.LogWarning("graphClient, no sites");
+                _log?.LogWarning("graphClient, no sites");
                 return;
             }
             foreach (var s in sites.Value)
@@ -106,7 +106,7 @@ namespace FMSoftlab.WorkflowTasks.Tasks
                 _log?.LogDebug("Will search for site with id: {SiteId}", TaskParams.SiteId);
                 site=sites.Value.Where(w => string.Equals(w.Name, TaskParams.SiteId)).SingleOrDefault();
             }
-            if (site == null)
+            if (site is null)
             {
                 _log?.LogWarning("graphClient, no site was found, SiteId: {SiteId}, SiteName: {SiteName}", TaskParams.SiteId, TaskParams.SiteName);
                 return;
@@ -114,24 +114,40 @@ namespace FMSoftlab.WorkflowTasks.Tasks
             var drives = await graphClient.Sites[site.Id].Drives.GetAsync();
             if (drives is null || drives.Value is null)
             {
-                _log.LogWarning("graphClient, no drives");
+                _log?.LogWarning("graphClient, no drives");
                 return;
             }
             foreach (var d in drives.Value)
             {
-                Console.WriteLine($"{d.Name} : {d.Id}");
+                _log?.LogTrace("Drive: {Id}, Name: {Name}", d.Id, d.Name);
             }
             var drive = drives.Value.Where(w => string.Equals(w.Name, "OneDrive", StringComparison.OrdinalIgnoreCase)).SingleOrDefault();
-            if (drive == null) return;
-            Console.WriteLine(drive.Name);
-            string uploadPath = "/Documents/YourFolder/test.txt"; // path in library
+            if (drive is null)
+            {
+                _log?.LogWarning("No drive was found, SiteId: {SiteId}, SiteName: {SiteName}, LibraryId: {LibraryId}, LibraryName: {LibraryName}",
+                    TaskParams.SiteId,
+                    TaskParams.SiteName,
+                    TaskParams.LibraryId,
+                    TaskParams.LibraryName);
+                return;
+            }
+            string uploadPath = "/"+TaskParams.DestinationFolder.TrimEnd('/').TrimStart('/') +"/"+Path.GetFileName(TaskParams.FileName);
+            _log?.LogInformation("Saving to: {uploadPath}", uploadPath);
             var uploadSession = await graphClient.Drives[drive.Id]
                 .Items["root"]
                 .ItemWithPath(uploadPath)
                 .CreateUploadSession
                 .PostAsync(uploadSessionRequestBody);
 
-            using var fileStream = File.OpenRead("test.txt");
+            Stream fileStream = null;
+            if (!string.IsNullOrWhiteSpace(TaskParams.FileName))
+            {
+                fileStream = File.OpenRead(TaskParams.FileName);
+            }
+            else
+            {
+                fileStream =new MemoryStream(TaskParams.FileContent);
+            }
             // Max slice size must be a multiple of 320 KiB
             int maxSliceSize = 320 * 1024;
             var fileUploadTask = new LargeFileUploadTask<DriveItem>(

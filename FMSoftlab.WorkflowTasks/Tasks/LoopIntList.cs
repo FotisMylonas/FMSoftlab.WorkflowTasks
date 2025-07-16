@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FMSoftlab.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,6 +65,7 @@ namespace FMSoftlab.WorkflowTasks
             {
                 try
                 {
+                    await Task.CompletedTask;
                     //await TaskParams.Flow
                     //await TaskParams.Flow.Start();
                     _log?.LogDebug($"loop list, id:{id}");
@@ -97,7 +99,7 @@ namespace FMSoftlab.WorkflowTasks
             }
             catch (Exception e)
             {
-                _log?.LogError($"Error: {e.Message}{Environment.NewLine}{e.StackTrace}");
+                _log?.LogAllErrors(e);
             }
         }
     }

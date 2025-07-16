@@ -1,126 +1,35 @@
-﻿using Microsoft.Graph;
+﻿using Azure.Identity;
+using FMSoftlab.Logging;
+using Microsoft.Extensions.Logging;
+using Microsoft.Graph;
+using Microsoft.Graph.Drives.Item.Items.Item.CreateUploadSession;
+using Microsoft.Graph.Models;
+using Microsoft.Graph.Models.ODataErrors;
 using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using System.IO;
-using Microsoft.Graph.Models;
-using Azure.Identity;
+using DriveUpload = Microsoft.Graph.Drives.Item.Items.Item.CreateUploadSession;
 
 namespace FMSoftlab.WorkflowTasks.Tasks
 {
 
-    //https://www.sharepointpals.com/post/upload-file-to-sharepoint-office-365-programmatically-using-c-csom-_api-web-getfolderbyserverrelativeurl-postasync-httpclient/
-    //https://www.sharepointpals.com/post/upload-file-to-sharepoint-office-365-programmatically-using-c-csom-pnp/
 
-
-    public class SharePointUploader
-    {
-        private readonly GraphServiceClient _graphClient;
-        private readonly string _siteId; // SharePoint site ID
-        private readonly string _clientId; // Azure AD App Client ID
-        private readonly string _tenantId; // Azure AD Tenant ID
-        private readonly string _clientSecret; // Azure AD App Client Secret
-
-        public SharePointUploader(string clientId, string tenantId, string clientSecret, string siteId)
-        {
-            _clientId = clientId;
-            _tenantId = tenantId;
-            _clientSecret = clientSecret;
-            _siteId = siteId;
-            _graphClient = CreateGraphClient();
-        }
-
-        private GraphServiceClient CreateGraphClient()
-        {
-            // The client credentials flow requires that you request the
-            // /.default scope, and pre-configure your permissions on the
-            // app registration in Azure. An administrator must grant consent
-            // to those permissions beforehand.
-            var scopes = new[] { "https://graph.microsoft.com/.default" };
-
-
-            // using Azure.Identity;
-            var options = new ClientSecretCredentialOptions
-            {
-                AuthorityHost = AzureAuthorityHosts.AzurePublicCloud,
-            };
-
-            // https://learn.microsoft.com/dotnet/api/azure.identity.clientsecretcredential
-            var clientSecretCredential = new ClientSecretCredential(
-                _tenantId, _clientId, _clientSecret, options);
-
-            var graphClient = new GraphServiceClient(clientSecretCredential, scopes);
-            return graphClient;
-        }
-
-        public async Task UploadFileAsync(string filePath, string destinationFolder)
-        {
-            try
-            {
-                // Read file content
-                /*using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-                string fileName = Path.GetFileName(filePath);
-
-                // Get the drive (document library)
-                var drive = await _graphClient.Sites[_siteId].Drive
-                    .Request()
-                    .GetAsync();
-
-                // Upload file
-                if (fileStream.Length <= 4 * 1024 * 1024) // 4MB threshold
-                {
-                    // Simple upload for small files
-                    await _graphClient.Drives[drive.Id].Root
-                        .ItemWithPath($"{destinationFolder}/{fileName}")
-                        .Content
-                        .Request()
-                        .PutAsync<DriveItem>(fileStream);
-                }
-                else
-                {
-                    // Large file upload with resumable sessions
-                    var uploadProps = new UploadSessionRequestOptions
-                    {
-                        Item = new DriveItem { Name = fileName }
-                    };
-
-                    var uploadSession = await _graphClient.Drives[drive.Id].Root
-                        .ItemWithPath($"{destinationFolder}/{fileName}")
-                        .CreateUploadSession()
-                        .Request()
-                        .PostAsync();
-
-                    const int chunkSize = 320 * 1024; // 320 KB chunks
-                    var largeFileUploader = new LargeFileUploadTask<DriveItem>(
-                        uploadSession, fileStream, chunkSize);
-
-                    await largeFileUploader.UploadAsync();
-                }
-                
-                Console.WriteLine($"File {fileName} uploaded successfully");*/
-                await Task.CompletedTask;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error uploading file: {ex.Message}");
-                throw;
-            }
-        }
-    }
     public class SharepointTaskParams : TaskParamsBase
     {
         public string TenantId { get; set; } = string.Empty;
         public string ClientId { get; set; } = string.Empty;
         public string ClientSecret { get; set; } = string.Empty;
         public string SiteId { get; set; } = string.Empty;
-        public string SiteUrl { get; set; } = string.Empty;
+        public string SiteName { get; set; } = string.Empty;
         public string LibraryName { get; set; } = string.Empty;
+        public string LibraryId { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
         public byte[] FileContent { get; set; } = [];
+        public string DestinationFolder { get; set; } = string.Empty;
         public SharepointTaskParams(IEnumerable<InputBinding> bindings) : base(bindings)
         {
 
@@ -143,20 +52,139 @@ namespace FMSoftlab.WorkflowTasks.Tasks
 
         public SharepointTask(string name, IGlobalContext globalContext, BaseTask parent, SharepointTaskParams taskParams, ILogger log) : base(name, globalContext, parent, taskParams, log)
         {
+
         }
 
+        private async Task UploadFileToSharepoint()
+        {
+            var confidentialClient = ConfidentialClientApplicationBuilder
+                .Create(TaskParams.ClientId)
+                .WithTenantId(TaskParams.TenantId)
+                .WithClientSecret(TaskParams.ClientSecret)
+                .Build();
+
+
+            // using Azure.Identity;
+            var options = new ClientSecretCredentialOptions
+            {
+                AuthorityHost = AzureAuthorityHosts.AzurePublicCloud,
+            };
+
+            // https://learn.microsoft.com/dotnet/api/azure.identity.clientsecretcredential
+            var clientSecretCredential = new ClientSecretCredential(TaskParams.TenantId, TaskParams.ClientId, TaskParams.ClientSecret, options);
+
+            var uploadSessionRequestBody = new DriveUpload.CreateUploadSessionPostRequestBody
+            {
+                Item = new DriveItemUploadableProperties
+                {
+                    AdditionalData = new Dictionary<string, object>
+                {
+                    { "@microsoft.graph.conflictBehavior", "replace" },
+                },
+                },
+            };
+
+            var graphClient = new GraphServiceClient(clientSecretCredential);
+            var sites = await graphClient.Sites.GetAsync();
+            if (sites is null || sites.Value is null)
+            {
+                _log.LogWarning("graphClient, no sites");
+                return;
+            }
+            foreach (var s in sites.Value)
+            {
+                _log?.LogTrace("Site: {Id}, Name: {SiteName}", s.Id, s.Name);
+            }
+            Site site = null;
+            if (!string.IsNullOrWhiteSpace(TaskParams.SiteName))
+            {
+                _log?.LogDebug("Will search for site with name: {SiteName}", TaskParams.SiteName);
+                site =sites.Value.Where(w => string.Equals(w.Name, TaskParams.SiteName)).SingleOrDefault();
+            }
+            else
+            {
+                _log?.LogDebug("Will search for site with id: {SiteId}", TaskParams.SiteId);
+                site=sites.Value.Where(w => string.Equals(w.Name, TaskParams.SiteId)).SingleOrDefault();
+            }
+            if (site == null)
+            {
+                _log?.LogWarning("graphClient, no site was found, SiteId: {SiteId}, SiteName: {SiteName}", TaskParams.SiteId, TaskParams.SiteName);
+                return;
+            }
+            var drives = await graphClient.Sites[site.Id].Drives.GetAsync();
+            if (drives is null || drives.Value is null)
+            {
+                _log.LogWarning("graphClient, no drives");
+                return;
+            }
+            foreach (var d in drives.Value)
+            {
+                Console.WriteLine($"{d.Name} : {d.Id}");
+            }
+            var drive = drives.Value.Where(w => string.Equals(w.Name, "OneDrive", StringComparison.OrdinalIgnoreCase)).SingleOrDefault();
+            if (drive == null) return;
+            Console.WriteLine(drive.Name);
+            string uploadPath = "/Documents/YourFolder/test.txt"; // path in library
+            var uploadSession = await graphClient.Drives[drive.Id]
+                .Items["root"]
+                .ItemWithPath(uploadPath)
+                .CreateUploadSession
+                .PostAsync(uploadSessionRequestBody);
+
+            using var fileStream = File.OpenRead("test.txt");
+            // Max slice size must be a multiple of 320 KiB
+            int maxSliceSize = 320 * 1024;
+            var fileUploadTask = new LargeFileUploadTask<DriveItem>(
+                uploadSession, fileStream, maxSliceSize, graphClient.RequestAdapter);
+
+            var totalLength = fileStream.Length;
+            // Create a callback that is invoked after each slice is uploaded
+            IProgress<long> progress = new Progress<long>(prog =>
+            {
+                _log?.LogDebug($"Uploaded {prog} bytes of {totalLength} bytes");
+            });
+
+            try
+            {
+                var uploadResult = await fileUploadTask.UploadAsync(progress);
+                _log?.LogInformation(uploadResult.UploadSucceeded
+                    ? $"Upload complete, item ID: {uploadResult.ItemResponse.Id}"
+                    : "Upload failed");
+            }
+            catch (ODataError ex)
+            {
+                _log?.LogError($"Error uploading: {ex.Error?.Message}");
+                _log?.LogAllErrors(ex);
+            }
+        }
         public override async Task Execute()
         {
+            if (TaskParams is null)
+            {
+                _log?.LogDebug($"{Name} TaskParams is null, exiting");
+                return;
+            }
+            if (TaskParams.TenantId is null)
+                _log?.LogWarning($"No TenantId");
 
-            var uploader = new SharePointUploader(TaskParams.ClientId, TaskParams.TenantId, TaskParams.ClientSecret, TaskParams.SiteId);
+            if (TaskParams.ClientId is null)
+                _log?.LogWarning($"No ClientId");
 
-            // Example upload
-            string filePath = @"C:\Files\document.pdf";
-            string destinationFolder = "Documents/Subfolder";
+            if (TaskParams.ClientSecret is null)
+                _log?.LogWarning($"No ClientSecret");
 
-            await uploader.UploadFileAsync(filePath, destinationFolder);
-
-            await Task.CompletedTask;
+            _log.LogInformation("TenantId: {TenantId}, ClientId: {ClientId}, ClientSecret: {ClientSecret}, SiteName: {SiteName}, SiteId: {SiteId}, LibraryName: {LibraryName}, LibraryId: {LibraryId}, Filename: {Filename}", 
+                TaskParams.TenantId, 
+                TaskParams.ClientId, 
+                TaskParams.ClientSecret, 
+                TaskParams.SiteName, 
+                TaskParams.SiteId, 
+                TaskParams.LibraryName,
+                TaskParams.LibraryId,
+                TaskParams.FileName
+                );
+            await UploadFileToSharepoint();
         }
     }
 }
+

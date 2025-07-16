@@ -115,7 +115,7 @@ namespace FMSoftlab.WorkflowTasks
             }
             catch (Exception ex)
             {
-                _log?.LogError($"{ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                _log?.LogAllErrors(ex);
                 throw;
             }
         }
@@ -234,7 +234,7 @@ namespace FMSoftlab.WorkflowTasks
             }
             catch (Exception ex)
             {
-                _log?.LogError($"{ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                _log?.LogAllErrors(ex);
                 throw;
             }
         }

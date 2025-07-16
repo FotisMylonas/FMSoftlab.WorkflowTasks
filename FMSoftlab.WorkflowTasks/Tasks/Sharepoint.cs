@@ -174,25 +174,25 @@ namespace FMSoftlab.WorkflowTasks.Tasks
                 _log?.LogDebug($"{Name} TaskParams is null, exiting");
                 return;
             }
-            if (TaskParams.TenantId is null)
+            if (string.IsNullOrWhiteSpace(TaskParams.TenantId))
             {
                 _log?.LogWarning($"No TenantId");
                 return;
             }
 
-            if (TaskParams.ClientId is null)
+            if (string.IsNullOrWhiteSpace(TaskParams.ClientId))
             {
                 _log?.LogWarning($"No ClientId");
                 return;
             }
 
-            if (TaskParams.ClientSecret is null)
+            if (string.IsNullOrWhiteSpace(TaskParams.ClientSecret))
             {
                 _log?.LogWarning($"No ClientSecret");
                 return;
             }
 
-            if (TaskParams.FileContent.Length<=0 && string.IsNullOrWhiteSpace(TaskParams.FileName))
+            if (TaskParams.FileContent?.Length<=0 && string.IsNullOrWhiteSpace(TaskParams.FileName))
             {
                 _log?.LogWarning($"No FileContent or FileName");
                 return;

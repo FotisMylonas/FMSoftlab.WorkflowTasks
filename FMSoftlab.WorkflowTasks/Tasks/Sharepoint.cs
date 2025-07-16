@@ -139,15 +139,9 @@ namespace FMSoftlab.WorkflowTasks.Tasks
                 .CreateUploadSession
                 .PostAsync(uploadSessionRequestBody);
 
-            Stream fileStream = null;
-            if (!string.IsNullOrWhiteSpace(TaskParams.FileName))
-            {
-                fileStream = File.OpenRead(TaskParams.FileName);
-            }
-            else
-            {
-                fileStream =new MemoryStream(TaskParams.FileContent);
-            }
+            using Stream fileStream = !string.IsNullOrWhiteSpace(TaskParams.FileName)
+                ? File.OpenRead(TaskParams.FileName)
+                : new MemoryStream(TaskParams.FileContent);
             // Max slice size must be a multiple of 320 KiB
             int maxSliceSize = 320 * 1024;
             var fileUploadTask = new LargeFileUploadTask<DriveItem>(

@@ -25,11 +25,11 @@ namespace FMSoftlab.WorkflowTasks.Tasks
         public string ClientSecret { get; set; } = string.Empty;
         public string SiteId { get; set; } = string.Empty;
         public string SiteName { get; set; } = string.Empty;
-        public string LibraryName { get; set; } = string.Empty;
         public string LibraryId { get; set; } = string.Empty;
+        public string LibraryName { get; set; } = string.Empty;
+        public string DestinationFolder { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
         public byte[] FileContent { get; set; } = [];
-        public string DestinationFolder { get; set; } = string.Empty;
         public SharepointTaskParams(IEnumerable<InputBinding> bindings) : base(bindings)
         {
 
@@ -139,9 +139,9 @@ namespace FMSoftlab.WorkflowTasks.Tasks
                 .CreateUploadSession
                 .PostAsync(uploadSessionRequestBody);
 
-            using Stream fileStream = !string.IsNullOrWhiteSpace(TaskParams.FileName)
-                ? File.OpenRead(TaskParams.FileName)
-                : new MemoryStream(TaskParams.FileContent);
+            using Stream fileStream = TaskParams.FileContent?.Length > 0
+                ? new MemoryStream(TaskParams.FileContent)
+                : File.OpenRead(TaskParams.FileName);
             // Max slice size must be a multiple of 320 KiB
             int maxSliceSize = 320 * 1024;
             var fileUploadTask = new LargeFileUploadTask<DriveItem>(
@@ -175,26 +175,41 @@ namespace FMSoftlab.WorkflowTasks.Tasks
                 return;
             }
             if (TaskParams.TenantId is null)
+            {
                 _log?.LogWarning($"No TenantId");
+                return;
+            }
 
             if (TaskParams.ClientId is null)
+            {
                 _log?.LogWarning($"No ClientId");
+                return;
+            }
 
             if (TaskParams.ClientSecret is null)
+            {
                 _log?.LogWarning($"No ClientSecret");
+                return;
+            }
 
-            _log.LogInformation("TenantId: {TenantId}, ClientId: {ClientId}, ClientSecret: {ClientSecret}, SiteName: {SiteName}, SiteId: {SiteId}, LibraryName: {LibraryName}, LibraryId: {LibraryId}, Filename: {Filename}", 
-                TaskParams.TenantId, 
-                TaskParams.ClientId, 
-                TaskParams.ClientSecret, 
-                TaskParams.SiteName, 
-                TaskParams.SiteId, 
+            if (TaskParams.FileContent.Length<=0 && string.IsNullOrWhiteSpace(TaskParams.FileName))
+            {
+                _log?.LogWarning($"No FileContent or FileName");
+                return;
+            }
+
+            _log.LogInformation("TenantId: {TenantId}, ClientId: {ClientId}, ClientSecret: {ClientSecret}, SiteName: {SiteName}, SiteId: {SiteId}, LibraryName: {LibraryName}, LibraryId: {LibraryId}, Filename: {Filename}, Content length: {FileContentLength}",
+                TaskParams.TenantId,
+                TaskParams.ClientId,
+                TaskParams.ClientSecret,
+                TaskParams.SiteName,
+                TaskParams.SiteId,
                 TaskParams.LibraryName,
                 TaskParams.LibraryId,
-                TaskParams.FileName
+                TaskParams.FileName,
+                TaskParams.FileContent?.Length
                 );
             await UploadFileToSharepoint();
         }
     }
 }
-

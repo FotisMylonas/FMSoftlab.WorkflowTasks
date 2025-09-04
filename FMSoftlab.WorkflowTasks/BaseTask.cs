@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Fluid.Filters;
+using Microsoft.Extensions.Logging;
+using Microsoft.Graph.Models.IdentityGovernance;
 using Microsoft.IdentityModel.Abstractions;
 using System;
 using System.Collections.Generic;
@@ -17,6 +19,51 @@ namespace FMSoftlab.WorkflowTasks
         public const int STRINGLIMIT = 5000;
     }
 
+    public enum StepProcessStatus
+    {
+        NotStarted,
+        InProgress,
+        Completed,
+        Failed
+    }
+    public class StepProcessResult
+    {
+        public DateTime? StartTime { get; set; }
+        public DateTime? CompletionTime { get; set; }
+        public StepProcessStatus Status { get; set; }
+        public string TaskName { get; set; }
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public StepProcessResult(string taskName)
+        {
+            TaskName=taskName;
+            Status=StepProcessStatus.NotStarted;
+            Success=false;
+            Message=string.Empty;
+        }
+        public void BeginExecution()
+        {
+            Status=StepProcessStatus.InProgress;
+            StartTime=DateTime.Now;
+            CompletionTime=null;
+            Success=false;
+            Message=string.Empty;
+        }
+        public void SetFailure(string message)
+        {
+            Status=StepProcessStatus.Failed;
+            Success=false;
+            Message=message;
+            CompletionTime=DateTime.Now;
+        }
+        public void SetSuccess() 
+        { 
+            Status=StepProcessStatus.Completed;
+            Success=true;
+            Message="OK";
+            CompletionTime=DateTime.Now;
+        }
+    }
     public class StepResult
     {
         public string StepName { get; set; }
@@ -35,6 +82,10 @@ namespace FMSoftlab.WorkflowTasks
     }
     public interface IGlobalContext
     {
+        List<StepProcessResult> ProcessResults { get; }
+        bool HasFailures { get; }
+        bool AllResultsSuccessful { get; }
+        StepProcessResult MostRecentFailure { get; }
         ILoggerFactory LoggerFactory { get; }
         List<StepResult> Results { get; }
         object GetTaskVariable(string task, string variable);
@@ -46,16 +97,30 @@ namespace FMSoftlab.WorkflowTasks
         void SetTaskVariable(string task, string variable, object Value);
         void SetTaskResult(string task, object value);
         void SetGlobalVariable(string variable, object value);
+        void SetProcessResult(StepProcessResult result);
     }
     public class GlobalContext : IGlobalContext
     {
+        public bool HasFailures => ProcessResults.Any(x => x.Status == StepProcessStatus.Failed);
+        public bool AllResultsSuccessful => ProcessResults.All(x => x.Status == StepProcessStatus.Completed);
+        public StepProcessResult MostRecentFailure => ProcessResults.OrderByDescending(x => x.CompletionTime).FirstOrDefault(x => x.Status == StepProcessStatus.Failed);
+        public List<StepProcessResult> ProcessResults { get; }
         public ILoggerFactory LoggerFactory { get; }
         public List<StepResult> Results { get; }
-
         public GlobalContext(ILoggerFactory loggerFactory)
         {
             LoggerFactory=loggerFactory;
             Results = new List<StepResult>();
+            ProcessResults=new List<StepProcessResult>();
+        }
+        public void SetProcessResult(StepProcessResult result)
+        {
+            var existing = ProcessResults.FirstOrDefault(x => string.Equals(x.TaskName, result.TaskName, StringComparison.OrdinalIgnoreCase));
+            if (existing !=null)
+            {
+                ProcessResults.Remove(existing);
+            }
+            ProcessResults.Add(result);
         }
         public object GetTaskResult(string task)
         {
@@ -130,6 +195,7 @@ namespace FMSoftlab.WorkflowTasks
         protected readonly ILogger _log;
         public IGlobalContext GlobalContext { get; set; }
         public BaseTask Parent { get; set; }
+        public StepProcessResult ProcessResult { get; set; }
         public List<BaseTask> Tasks { get; }
         //public IDictionary<string, object> Results { get; set; }
 
@@ -156,6 +222,8 @@ namespace FMSoftlab.WorkflowTasks
             GlobalContext=globalContext;
             _log=log;
             _taskParams=null;
+            ProcessResult=new StepProcessResult(Name);
+            GlobalContext.SetProcessResult(ProcessResult);
         }
 
         public BaseTask(string name, IGlobalContext globalContext, ILogger log)
@@ -166,6 +234,8 @@ namespace FMSoftlab.WorkflowTasks
             GlobalContext=globalContext;
             _log=log;
             _taskParams=null;
+            ProcessResult=new StepProcessResult(Name);
+            GlobalContext.SetProcessResult(ProcessResult);
         }
 
         public object GetGlobalVariable(string resultName)
@@ -227,26 +297,31 @@ namespace FMSoftlab.WorkflowTasks
             }
             return res;
         }
-
         public async Task DoExecute()
         {
             _log?.LogDebug($"Starting execution of step:{Name}");
+            ProcessResult.BeginExecution();
+            GlobalContext.SetProcessResult(ProcessResult);
             try
             {
                 if (_taskParams!=null)
                 {
                     _taskParams.LoadResults(GlobalContext);
                     string s = GetPublicPropertiesAsString(_taskParams);
-                    _log?.LogDebug($"executing step:{Name}, params:{Environment.NewLine}{s}");
+                    _log?.LogDebug("executing step:{Name}, params:{TaskParams}", Name, Environment.NewLine+s);
                 }
                 else
                 {
                     _log?.LogDebug($"executing step:{Name}, no params");
                 }
                 await Execute();
+                ProcessResult.SetSuccess();
+                GlobalContext.SetProcessResult(ProcessResult);
             }
             catch (Exception ex)
             {
+                ProcessResult.SetFailure(ex.Message);
+                GlobalContext.SetProcessResult(ProcessResult);
                 _log?.LogError($"Error at step {Name}: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
                 throw;
             }
@@ -289,7 +364,6 @@ namespace FMSoftlab.WorkflowTasks
             TaskParams=taskParams;
             _taskParams=taskParams;
         }
-
         public void SetParams(TTaskParams taskParams)
         {
             TaskParams=taskParams;

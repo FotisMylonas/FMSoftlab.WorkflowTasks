@@ -34,6 +34,7 @@ namespace FMSoftlab.WorkflowTasks.Tests
         public async Task UseSqlScalarResultFromStepOneAsInputToStepTwo()
         {
             int value = 88888888;
+
             Workflow wf = new Workflow("test", _loggerFactory);
             wf.AddTask<ExecuteSQL, ExecuteSQLParams>("ExecSql1",
                 new ExecuteSQLParams()
@@ -242,6 +243,28 @@ namespace FMSoftlab.WorkflowTasks.Tests
 
                 });
             await wf.Start();
+        }
+
+        [Fact]
+        public async Task TestException()
+        {
+            Workflow wf = new Workflow("test", _loggerFactory);
+            wf.AddTask<RaiseExceptionTask, RaiseExceptionTaskParams>("ExceptionThrower", new RaiseExceptionTaskParams()
+            {
+                ExceptionMessage="This is a test exception"
+            });
+            try
+            {
+                await wf.Start();
+                throw new Exception("You shouldn't be here");
+            }
+            catch (Exception)
+            {
+                Assert.True(wf.HasFailures);
+                Assert.False(wf.AllResultsSuccessful);
+                var failure = wf.MostRecentFailure;
+                Assert.True(failure.Message=="This is a test exception");
+            }
         }
     }
 }

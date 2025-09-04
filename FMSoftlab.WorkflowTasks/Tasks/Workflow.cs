@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FMSoftlab.WorkflowTasks
+namespace FMSoftlab.WorkflowTasks.Tasks
 {
     public class Workflow : BaseTask
     {
@@ -22,5 +22,9 @@ namespace FMSoftlab.WorkflowTasks
             WorkflowEngine engine = new WorkflowEngine();
             await engine.Execute(this);
         }
+        public bool HasFailures => GlobalContext.HasFailures;
+        public bool AllResultsSuccessful => GlobalContext.AllResultsSuccessful;
+        public StepProcessResult MostRecentFailure => GlobalContext.MostRecentFailure;
+
     }
 }

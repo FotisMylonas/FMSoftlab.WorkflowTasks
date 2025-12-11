@@ -9,29 +9,29 @@ using System.Threading.Tasks;
 
 namespace FMSoftlab.WorkflowTasks
 {
-    public class ExportCSVLocalFSParams : TaskParamsBase
+    public class WriteStringToFileParams : TaskParamsBase
     {
         public string Folder { get; set; }
         public string Filename { get; set; }
         public Encoding Encoding { get; set; }
         public string Timestamp { get; set; }
-        public string CsvContent { get; set; }
-        public ExportCSVLocalFSParams()
+        public string Content { get; set; }
+        public WriteStringToFileParams()
         {
 
         }
         public override void LoadResults(IGlobalContext globalContext)
         {
-            _bindings.SetValueIfBindingExists<string>("CsvContent", globalContext, (globalContext, value) => CsvContent =value);
+            _bindings.SetValueIfBindingExists<string>("Content", globalContext, (globalContext, value) => Content =value);
         }
     }
-    public class ExportCSVLocalFS : BaseTaskWithParams<ExportCSVLocalFSParams>
+    public class WriteStringToFile : BaseTaskWithParams<WriteStringToFileParams>
     {
-        public ExportCSVLocalFS(string name, IGlobalContext globalContext, BaseTask parent, ExportCSVLocalFSParams taskParams, ILogger<ExportCSVLocalFS> log) : base(name, globalContext, parent, taskParams, log)
+        public WriteStringToFile(string name, IGlobalContext globalContext, BaseTask parent, WriteStringToFileParams taskParams, ILogger<WriteStringToFile> log) : base(name, globalContext, parent, taskParams, log)
         {
 
         }
-        public ExportCSVLocalFS(string name, IGlobalContext globalContext, ExportCSVLocalFSParams taskParams, ILogger<ExportCSVLocalFS> log) : base(name, globalContext, taskParams, log)
+        public WriteStringToFile(string name, IGlobalContext globalContext, WriteStringToFileParams taskParams, ILogger<WriteStringToFile> log) : base(name, globalContext, taskParams, log)
         {
 
         }
@@ -40,12 +40,12 @@ namespace FMSoftlab.WorkflowTasks
             _log?.LogDebug($"ExportCSVLocalFS, filename:{TaskParams?.Filename}, Timestamp:{TaskParams?.Timestamp}");
             if (string.IsNullOrWhiteSpace(TaskParams.Filename))
             {
-                _log?.LogWarning("ExportCSVLocalFS, no filename defined");
+                _log?.LogWarning("WriteStringToFile, no filename defined");
                 return;
             }
-            if (string.IsNullOrWhiteSpace(TaskParams.CsvContent))
+            if (string.IsNullOrWhiteSpace(TaskParams.Content))
             {
-                _log?.LogWarning("ExportCSVLocalFS, no content to export");
+                _log?.LogWarning("WriteStringToFile, no content to export");
                 return;
             }
             string filename = TaskParams.Filename;
@@ -56,8 +56,8 @@ namespace FMSoftlab.WorkflowTasks
                 filename=$"{filename}{Path.GetExtension(TaskParams.Filename)}";
             }
             filename = Path.Combine(TaskParams.Folder, filename);
-            _log?.LogDebug($"saving to filename:{filename}, content length:{TaskParams.CsvContent.Length}, Encoding:{TaskParams.Encoding}");
-            await File.WriteAllTextAsync(filename, TaskParams.CsvContent, TaskParams.Encoding);
+            _log?.LogDebug("saving to filename:{filename}, content length:{CsvContentLength}, Encoding:{Encoding}, CodePage:{CodePage}", filename, TaskParams.Content.Length, TaskParams.Encoding, TaskParams.Encoding.CodePage);
+            await File.WriteAllTextAsync(filename, TaskParams.Content, TaskParams.Encoding);
         }
     }
 }

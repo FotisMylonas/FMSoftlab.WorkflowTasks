@@ -22,15 +22,15 @@ namespace FMSoftlab.WorkflowTasks.Tasks
         Word,
         HTML
     }
-    public class HttpClientOptions
+    public class HttpClientCredentialsOptions
     {
-        public string UserName { get; set; }
-        public string Password { get; set; }
         public string Domain { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }        
     }
     public static class ReportServerHttpClientHelpers
     {
-        public static void AddReportServerHttpClient(this IServiceCollection services, HttpClientOptions httpClientOptions)
+        public static void AddReportServerHttpClient(this IServiceCollection services, HttpClientCredentialsOptions httpClientCredentialsOptions)
         {
             // In Startup.cs or Program.cs
             // Register typed HTTP client
@@ -41,15 +41,34 @@ namespace FMSoftlab.WorkflowTasks.Tasks
                     client.DefaultRequestHeaders.Add("User-Agent", "ReportFlow/1.0");
                 })
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5)) // How long to keep handlers
-                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+                .ConfigurePrimaryHttpMessageHandler(() =>
                 {
-                    // Default handler settings
-                    Credentials = new NetworkCredential(
-                        httpClientOptions.UserName,
-                        httpClientOptions.Password,
-                        httpClientOptions.Domain),
-                    PreAuthenticate = true,
-                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+                    HttpClientHandler handler = null;
+                    if (httpClientCredentialsOptions != null && !string.IsNullOrWhiteSpace(httpClientCredentialsOptions.UserName))
+                    {
+                        handler= new HttpClientHandler()
+                        {
+                            // Default handler settings
+                            UseDefaultCredentials=false,
+                            Credentials = new NetworkCredential(
+                                httpClientCredentialsOptions.UserName,
+                                httpClientCredentialsOptions.Password,
+                                httpClientCredentialsOptions.Domain),
+                            PreAuthenticate = true,
+                            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+                        };
+                    }
+                    else
+                    {
+                        handler= new HttpClientHandler()
+                        {
+                            // Default handler settings
+                            UseDefaultCredentials=true,
+                            PreAuthenticate = true,
+                            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+                        };
+                    }
+                    return handler;
                 });
         }
     }

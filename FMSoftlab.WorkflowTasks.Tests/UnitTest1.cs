@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using FMSoftlab.WorkflowTasks.Flows;
 using FMSoftlab.WorkflowTasks.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -18,6 +19,7 @@ namespace FMSoftlab.WorkflowTasks.Tests
     {
         private readonly ILogger<WorkflowTests> _logger;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly IServiceProvider _serviceProvider;
         public WorkflowTests()
         {
             var logger = new LoggerConfiguration()
@@ -28,6 +30,36 @@ namespace FMSoftlab.WorkflowTasks.Tests
 
             _loggerFactory = new SerilogLoggerFactory(logger);
             _logger = _loggerFactory.CreateLogger<WorkflowTests>();
+
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+            _serviceProvider = services.BuildServiceProvider();
+        }
+
+        private void ConfigureServices(IServiceCollection services)
+        {
+            // Register logging
+            services.AddSingleton(_loggerFactory);
+            services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
+
+            // Register HttpClient
+            services.AddHttpClient<ReportServerClient>()
+                .ConfigureHttpClient(client =>
+                {
+                    client.Timeout = TimeSpan.FromMinutes(5);
+                });
+
+            // Register your services
+            services.AddTransient<ReportServerGetFile>();
+
+            // Add any other dependencies your tests need
+            HttpClientOptions options=new HttpClientOptions()
+            {
+                UserName="fotis",
+                Password="12345678",
+                Domain="eurodomain"
+            };
+            services.AddReportServerHttpClient(options);
         }
 
         [Fact]
@@ -35,7 +67,8 @@ namespace FMSoftlab.WorkflowTasks.Tests
         {
             int value = 88888888;
 
-            Workflow wf = new Workflow("test", _loggerFactory);
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            Workflow wf = new Workflow("test", globalContext);
             wf.AddTask<ExecuteSQL, ExecuteSQLParams>("ExecSql1",
                 new ExecuteSQLParams()
                 {
@@ -75,7 +108,8 @@ namespace FMSoftlab.WorkflowTasks.Tests
         [Fact]
         public async Task ConnectToDbReturnValue()
         {
-            Workflow wf = new Workflow("test", _loggerFactory);
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            Workflow wf = new Workflow("test", globalContext);
             wf.AddTask<ExecuteSQLTyped<SqlResultTest>, ExecuteSQLParams>("ExecSql",
                 new ExecuteSQLParams()
                 {
@@ -136,16 +170,16 @@ namespace FMSoftlab.WorkflowTasks.Tests
                 DataRoot="data",
                 Template=@"Files\test.xlsx"
             };
-            ExportExcelFlow<SqlResultTest> excport = new ExportExcelFlow<SqlResultTest>(@params, _loggerFactory, log);
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            ExportExcelFlow<SqlResultTest> excport = new ExportExcelFlow<SqlResultTest>(@params, globalContext, log);
             await excport.Execute();
         }
 
         [Fact]
         public async Task ExportExcelDatareader()
         {
-            ILogger<ExportExcelFlow<SqlResultTest>> log = _loggerFactory.CreateLogger<ExportExcelFlow<SqlResultTest>>();
-
-            Workflow wf = new Workflow("test", _loggerFactory);
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            Workflow wf = new Workflow("test", globalContext);
             wf.AddTask<TransactionManager, TransactionManagerParams>("TransactionManager", new TransactionManagerParams()
             {
                 ConnectionString=@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true"
@@ -180,8 +214,8 @@ namespace FMSoftlab.WorkflowTasks.Tests
         [Fact]
         public async Task CopyFolder()
         {
-            ILogger<Workflow> log = _loggerFactory.CreateLogger<Workflow>();
-            Workflow wf = new Workflow("test", _loggerFactory);
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            Workflow wf = new Workflow("test", globalContext);
             wf.AddTask<CopyFolder, CopyFolderParams>("CopyFolder",
                 new CopyFolderParams()
                 {
@@ -194,8 +228,8 @@ namespace FMSoftlab.WorkflowTasks.Tests
         [Fact]
         public async Task ZipFolder()
         {
-            ILogger<Workflow> log = _loggerFactory.CreateLogger<Workflow>();
-            Workflow wf = new Workflow("test", _loggerFactory);
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            Workflow wf = new Workflow("test", globalContext);
             wf.AddTask<FileZipper, FileZipperParams>("ZipFolder",
                 new FileZipperParams()
                 {
@@ -212,8 +246,8 @@ namespace FMSoftlab.WorkflowTasks.Tests
         [Fact]
         public async Task ZipFolder_DoNot_IncludeBaseDirectory()
         {
-            ILogger<Workflow> log = _loggerFactory.CreateLogger<Workflow>();
-            Workflow wf = new Workflow("test", _loggerFactory);
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            Workflow wf = new Workflow("test", globalContext);
             wf.AddTask<FileZipper, FileZipperParams>("ZipFolder",
                 new FileZipperParams()
                 {
@@ -230,8 +264,8 @@ namespace FMSoftlab.WorkflowTasks.Tests
         [Fact]
         public async Task UnzipFile()
         {
-            ILogger<Workflow> log = _loggerFactory.CreateLogger<Workflow>();
-            Workflow wf = new Workflow("test", _loggerFactory);
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            Workflow wf = new Workflow("test", globalContext);
             wf.AddTask<FileZipper, FileZipperParams>("ZipFolder",
                 new FileZipperParams()
                 {
@@ -248,7 +282,8 @@ namespace FMSoftlab.WorkflowTasks.Tests
         [Fact]
         public async Task TestException()
         {
-            Workflow wf = new Workflow("test", _loggerFactory);
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            Workflow wf = new Workflow("test", globalContext);
             wf.AddTask<RaiseExceptionTask, RaiseExceptionTaskParams>("ExceptionThrower", new RaiseExceptionTaskParams()
             {
                 ExceptionMessage="This is a test exception"
@@ -264,6 +299,43 @@ namespace FMSoftlab.WorkflowTasks.Tests
                 Assert.False(wf.AllResultsSuccessful);
                 var failure = wf.MostRecentFailure;
                 Assert.True(failure.Message=="This is a test exception");
+            }
+        }
+
+        [Trait("Category", "Integration")]
+        public async Task DownloadReport_FromSsrs_Succeeds()
+        {
+            GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
+            Workflow wf = new Workflow("DownloadReport", globalContext);
+            wf.AddTask<ReportServerGetFile, ReportServerGetFileParams>("DownloadReport", new ReportServerGetFileParams()
+            {
+                UseHttps=false,
+                ServerUrl=@"",
+                Domain="",
+                UserName="",
+                Password="",
+                ReportPath=@"",
+                Format=ReportFormat.PDF,
+                Parameters=new Dictionary<string, string>()
+                {
+                    { "PrintJob", "1" }
+                }
+            });
+            wf.AddTask<WriteBytesToFile, WriteBytesToFileParams>("WriteReportToDisk", new WriteBytesToFileParams()
+            {
+                Filename="report.pdf",
+                Folder=@"C:\temp",
+                Timestamp="yyyyMMdd HHmmss"
+            }, [new ResultBinding("FileContent", "DownloadReport")]);
+            try
+            {
+                await wf.Start();
+            }
+            catch (Exception ex)
+            {
+                Assert.True(wf.HasFailures);
+                Assert.False(wf.AllResultsSuccessful);
+                var failure = wf.MostRecentFailure;
             }
         }
     }

@@ -9,7 +9,10 @@ namespace FMSoftlab.WorkflowTasks.Tasks
 {
     public class Workflow : BaseTask
     {
-        public Workflow(string name, ILoggerFactory logFactory) : base(name, new GlobalContext(logFactory), null, logFactory.CreateLogger<Workflow>())
+        public Workflow(string name, IGlobalContext globalContext) : base(
+            name,
+            globalContext,
+            globalContext.LoggerFactory.CreateLogger<Workflow>())
         {
 
         }

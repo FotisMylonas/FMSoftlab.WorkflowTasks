@@ -28,18 +28,20 @@ namespace FMSoftlab.WorkflowTasks
     }
     public class StepProcessResult
     {
+        private readonly ILogger _log;
         public DateTime? StartTime { get; set; }
         public DateTime? CompletionTime { get; set; }
         public StepProcessStatus Status { get; set; }
         public string TaskName { get; set; }
         public bool Success { get; set; }
         public string Message { get; set; }
-        public StepProcessResult(string taskName)
+        public StepProcessResult(string taskName, ILogger log)
         {
             TaskName=taskName;
             Status=StepProcessStatus.NotStarted;
             Success=false;
             Message=string.Empty;
+            _log=log;
         }
         public void BeginExecution()
         {
@@ -48,6 +50,7 @@ namespace FMSoftlab.WorkflowTasks
             CompletionTime=null;
             Success=false;
             Message=string.Empty;
+            _log?.LogDebug($"Step {TaskName} started at {StartTime}");
         }
         public void SetFailure(string message)
         {
@@ -55,13 +58,15 @@ namespace FMSoftlab.WorkflowTasks
             Success=false;
             Message=message;
             CompletionTime=DateTime.Now;
+            _log?.LogError($"Step {TaskName} failed at {CompletionTime}");
         }
-        public void SetSuccess() 
-        { 
+        public void SetSuccess()
+        {
             Status=StepProcessStatus.Completed;
             Success=true;
             Message="OK";
             CompletionTime=DateTime.Now;
+            _log?.LogInformation($"Step {TaskName} succeeded at {CompletionTime}");
         }
     }
     public class StepResult
@@ -98,20 +103,27 @@ namespace FMSoftlab.WorkflowTasks
         void SetTaskResult(string task, object value);
         void SetGlobalVariable(string variable, object value);
         void SetProcessResult(StepProcessResult result);
+        IServiceProvider GetServiceProvider();
     }
     public class GlobalContext : IGlobalContext
     {
+        private readonly IServiceProvider _serviceProvider;
         public bool HasFailures => ProcessResults.Any(x => x.Status == StepProcessStatus.Failed);
         public bool AllResultsSuccessful => ProcessResults.All(x => x.Status == StepProcessStatus.Completed);
         public StepProcessResult MostRecentFailure => ProcessResults.OrderByDescending(x => x.CompletionTime).FirstOrDefault(x => x.Status == StepProcessStatus.Failed);
         public List<StepProcessResult> ProcessResults { get; }
         public ILoggerFactory LoggerFactory { get; }
         public List<StepResult> Results { get; }
-        public GlobalContext(ILoggerFactory loggerFactory)
+        public GlobalContext(IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
         {
+            _serviceProvider=serviceProvider;
             LoggerFactory=loggerFactory;
             Results = new List<StepResult>();
             ProcessResults=new List<StepProcessResult>();
+        }
+        public IServiceProvider GetServiceProvider() 
+        { 
+            return _serviceProvider;
         }
         public void SetProcessResult(StepProcessResult result)
         {
@@ -190,9 +202,11 @@ namespace FMSoftlab.WorkflowTasks
     }
     public abstract class BaseTask
     {
+
         protected TaskParamsBase _taskParams;
         public string Name { get; }
         protected readonly ILogger _log;
+        protected readonly IServiceProvider _serviceProvider;
         public IGlobalContext GlobalContext { get; set; }
         public BaseTask Parent { get; set; }
         public StepProcessResult ProcessResult { get; set; }
@@ -222,7 +236,8 @@ namespace FMSoftlab.WorkflowTasks
             GlobalContext=globalContext;
             _log=log;
             _taskParams=null;
-            ProcessResult=new StepProcessResult(Name);
+            _serviceProvider=globalContext.GetServiceProvider();
+            ProcessResult=new StepProcessResult(Name, log);
             GlobalContext.SetProcessResult(ProcessResult);
         }
 
@@ -234,7 +249,8 @@ namespace FMSoftlab.WorkflowTasks
             GlobalContext=globalContext;
             _log=log;
             _taskParams=null;
-            ProcessResult=new StepProcessResult(Name);
+            _serviceProvider=globalContext.GetServiceProvider();
+            ProcessResult=new StepProcessResult(Name, log);
             GlobalContext.SetProcessResult(ProcessResult);
         }
 

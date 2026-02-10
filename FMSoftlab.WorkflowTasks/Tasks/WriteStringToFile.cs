@@ -56,7 +56,11 @@ namespace FMSoftlab.WorkflowTasks
                 filename=$"{filename}{Path.GetExtension(TaskParams.Filename)}";
             }
             filename = Path.Combine(TaskParams.Folder, filename);
-            _log?.LogDebug("saving to filename:{filename}, content length:{CsvContentLength}, Encoding:{Encoding}, CodePage:{CodePage}", filename, TaskParams.Content.Length, TaskParams.Encoding, TaskParams.Encoding.CodePage);
+            _log?.LogDebug("saving to filename:{filename}, content length:{CsvContentLength}, Encoding:{Encoding}, CodePage:{CodePage}", 
+                filename, 
+                TaskParams.Content.Length, 
+                TaskParams.Encoding, 
+                TaskParams.Encoding.CodePage);
             await File.WriteAllTextAsync(filename, TaskParams.Content, TaskParams.Encoding);
         }
     }

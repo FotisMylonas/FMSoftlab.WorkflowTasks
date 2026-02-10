@@ -97,11 +97,12 @@ namespace FMSoftlab.WorkflowTasks.Flows
         private readonly ILogger<ExportExcelFlow<T>> _log;
         private readonly IExportExcelFlowParams _exportExcelFlowParams;
         private readonly ILoggerFactory _logfact;
-        public ExportExcelFlow(IExportExcelFlowParams exportExcelFlowParams, ILoggerFactory logfact, ILogger<ExportExcelFlow<T>> log)
+        private readonly IGlobalContext _globalContext;
+        public ExportExcelFlow(IExportExcelFlowParams exportExcelFlowParams, IGlobalContext globalContext, ILogger<ExportExcelFlow<T>> log)
         {
             _exportExcelFlowParams = exportExcelFlowParams;
             _log = log;
-            _logfact = logfact;
+            _globalContext = globalContext;
         }
 
         private void AddDataStaging(Workflow wf)
@@ -154,7 +155,7 @@ namespace FMSoftlab.WorkflowTasks.Flows
             _log?.LogDebug($"JobName:{_exportExcelFlowParams.Name} in");
             try
             {
-                Workflow wf = new Workflow(_exportExcelFlowParams.Name, _logfact);
+                Workflow wf = new Workflow(_exportExcelFlowParams.Name, _globalContext);
                 int commandTimeout = _exportExcelFlowParams.LongRunningTimeout;
                 if (!string.IsNullOrWhiteSpace(_exportExcelFlowParams.StagingSql))
                 {

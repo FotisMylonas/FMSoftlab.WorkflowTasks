@@ -152,7 +152,14 @@ namespace FMSoftlab.WorkflowTasks.Tasks
         }
         public override void LoadResults(IGlobalContext globalContext)
         {
-
+            _bindings.SetValueIfBindingExists<Dictionary<string, string>>(nameof(Parameters), globalContext, (globalContext, value) =>
+            {
+                Parameters.Clear();
+                foreach (var kvp in value)
+                {
+                    Parameters[kvp.Key] = kvp.Value;
+                }
+            });
         }
     }
     public class ReportServerGetFile : BaseTaskWithParams<ReportServerGetFileParams>

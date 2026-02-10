@@ -303,6 +303,7 @@ namespace FMSoftlab.WorkflowTasks.Tests
         }
 
         [Trait("Category", "Integration")]
+        [Fact]
         public async Task DownloadReport_FromSsrs_Succeeds()
         {
             GlobalContext globalContext = new GlobalContext(_serviceProvider, _loggerFactory);
@@ -318,7 +319,7 @@ namespace FMSoftlab.WorkflowTasks.Tests
                 Format=ReportFormat.PDF,
                 Parameters=new Dictionary<string, string>()
                 {
-                    { "PrintJob", "1" }
+                    { "PrintJob", "15661" }
                 }
             });
             wf.AddTask<WriteBytesToFile, WriteBytesToFileParams>("WriteReportToDisk", new WriteBytesToFileParams()

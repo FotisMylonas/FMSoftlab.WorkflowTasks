@@ -53,7 +53,7 @@ namespace FMSoftlab.WorkflowTasks.Tests
             services.AddTransient<ReportServerGetFile>();
 
             // Add any other dependencies your tests need
-            HttpClientOptions options=new HttpClientOptions()
+            HttpClientCredentialsOptions options =new HttpClientCredentialsOptions()
             {
                 UserName="fotis",
                 Password="12345678",

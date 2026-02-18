@@ -24,6 +24,7 @@ namespace FMSoftlab.WorkflowTasks
     public class GenerateCsvContentParams : TaskParamsBase
     {
         public List<FieldInfo> FieldsInfo { get; set; }
+        public string NewLineReplacementString { get; set; }
         public string DateFormat { get; set; }
         public string DecimalSeperator { get; set; }
         public string ThousandSeperator { get; set; }
@@ -33,6 +34,7 @@ namespace FMSoftlab.WorkflowTasks
         public GenerateCsvContentParams()
         {
             FieldsInfo = new List<FieldInfo>();
+            NewLineReplacementString=" ";
         }
         public override void LoadResults(IGlobalContext globalContext)
         {
@@ -177,9 +179,9 @@ namespace FMSoftlab.WorkflowTasks
                         }
                         res=res
                         .Replace("\"", "\"\"")
-                        .Replace(Environment.NewLine, " ##NEWLINE## ")
-                        .Replace("\r", " ##NEWLINE## ")
-                        .Replace("\n", " ##NEWLINE## ");
+                        .Replace(Environment.NewLine, TaskParams.NewLineReplacementString)
+                        .Replace("\r", TaskParams.NewLineReplacementString)
+                        .Replace("\n", TaskParams.NewLineReplacementString);
                         return res;
                     };
                 string[] escapedValues = values.Select(val => GetValue(val)).ToArray();

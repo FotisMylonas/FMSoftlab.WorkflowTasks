@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
 	  <Version>1.0.0</Version>
 	  <AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -11,18 +11,18 @@
 
 
 	<ItemGroup>
-    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Dapper" Version="2.1.79" />
     <PackageReference Include="Fluid.Core" Version="2.31.0" />
-    <PackageReference Include="FMSoftlab.DataAccess" Version="1.1.29" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Graph" Version="5.102.0" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.82.1" />
+    <PackageReference Include="FMSoftlab.DataAccess" Version="1.1.32" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Graph" Version="6.2.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.84.2" />
     <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
-    <PackageReference Include="miniexcel" Version="1.42.0" />
-    <PackageReference Include="System.Management" Version="10.0.3" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.3" />
+    <PackageReference Include="miniexcel" Version="1.44.1" />
+    <PackageReference Include="System.Management" Version="10.0.9" />
   </ItemGroup>
 
 </Project>

@@ -75,11 +75,16 @@ namespace FMSoftlab.WorkflowTasks
         public override async Task Execute()
         {
             if (TaskParams.Data==null)
+            {
+                _log?.LogWarning("GenerateCsvContent, no data exist, exiting...");
                 return;
+            }
             if (!TaskParams.Data.Any())
+            {
+                _log?.LogWarning("GenerateCsvContent, no data exist, exiting...");
                 return;
-
-
+            }
+            _log?.LogInformation("GenerateCsvContent, executing...");
             // Get the column names from the first row of the results
             string[] columnNames = ((IDictionary<string, object>)TaskParams.Data.First()).Keys.ToArray();
             string[] columnInfo = Enumerable.Empty<string>().ToArray();
@@ -131,9 +136,10 @@ namespace FMSoftlab.WorkflowTasks
             nfint.NumberGroupSeparator = TaskParams.ThousandSeperator;
             nfint.NumberDecimalDigits=0;
 
-            // Add the data rows to the CSV file
+            int rowCount = 0;
             foreach (var row in TaskParams.Data)
             {
+                rowCount++;
                 object[] values = null;
                 // Convert each row to an array of object values
                 var dict = MapDapperRowToCaseInsensitiveDictionary(row);
@@ -188,7 +194,9 @@ namespace FMSoftlab.WorkflowTasks
                 // Add the row to the CSV file
                 csvBuilder.AppendLine(string.Join(TaskParams.Delimiter, escapedValues));
             }
+            _log?.LogDebug("GenerateCsvContent, processed {0} data rows", rowCount);
             SetTaskResult(csvBuilder.ToString());
+            _log?.LogDebug("GenerateCsvContent, CSV content generated successfully, content length: {0}", csvBuilder.Length);
             await Task.CompletedTask;
             //string filename = Path.Combine(settings.Folder, settings.Filename);
             // await File.WriteAllTextAsync(filename, csvBuilder.ToString());

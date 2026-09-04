@@ -13,16 +13,16 @@
 	<ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Dapper" Version="2.1.79" />
-    <PackageReference Include="Fluid.Core" Version="2.31.0" />
+    <PackageReference Include="Fluid.Core" Version="2.40.0" />
     <PackageReference Include="FMSoftlab.DataAccess" Version="1.1.34" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
-    <PackageReference Include="Microsoft.Graph" Version="6.2.0" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.85.2" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Graph" Version="6.5.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.88.0" />
     <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
-    <PackageReference Include="miniexcel" Version="1.45.0" />
-    <PackageReference Include="System.Management" Version="10.0.9" />
+    <PackageReference Include="miniexcel" Version="1.46.0" />
+    <PackageReference Include="System.Management" Version="10.0.11" />
   </ItemGroup>
 
 </Project>
